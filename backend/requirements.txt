@@ -10,8 +10,10 @@ email-validator==2.1.0
 alembic==1.13.0
 anthropic>=0.56.0
 pytesseract==0.3.10
-pillow==10.1.0
+pillow==11.0.0
 python-dotenv==1.0.0
 pytest==7.4.3
 pytest-cov==4.1.0
 httpx==0.25.1
+bcrypt==4.0.1
+passlib==1.7.4
