@@ -66,7 +66,7 @@ def _send_notification(data: SubscribeRequest):
 
     try:
         resend.Emails.send({
-            "from": "MarineOS <onboarding@resend.dev>",
+            "from": "MarineOS <noreply@marineos.app>",
             "to": [notify_to],
             "subject": f"New Access Request: {data.name} from {data.company}",
             "html": html,
