@@ -9,6 +9,8 @@ import SubscribeModal from './SubscribeModal'
 interface LandingPageProps {
   onEnterDashboard: () => void
   onSubscribe: (email: string) => void
+  onShowImpressum: () => void
+  onShowPrivacy: () => void
 }
 
 function useReveal() {
@@ -28,7 +30,7 @@ function useReveal() {
   }, [])
 }
 
-export default function LandingPage({ onEnterDashboard, onSubscribe }: LandingPageProps) {
+export default function LandingPage({ onEnterDashboard, onSubscribe, onShowImpressum, onShowPrivacy }: LandingPageProps) {
   const [showSubscribeModal, setShowSubscribeModal] = useState(false)
   useReveal()
 
@@ -639,8 +641,8 @@ function FooterSection() {
         <div className="flex flex-col sm:flex-row justify-between items-center gap-3 text-steel-500 text-xs">
           <p>© {new Date().getFullYear()} MarineOS. All rights reserved.</p>
           <div className="flex gap-5">
-            <a href="#" className="hover:text-steel-300 transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-steel-300 transition-colors">Terms of Service</a>
+            <button onClick={onShowPrivacy} className="hover:text-steel-300 transition-colors">Privacy Policy</button>
+            <button onClick={onShowImpressum} className="hover:text-steel-300 transition-colors">Impressum</button>
           </div>
         </div>
       </div>

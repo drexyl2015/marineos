@@ -3,13 +3,15 @@ import DashboardRouter from './components/DashboardRouter'
 import Navigation from './components/Navigation'
 import LandingPage from './components/LandingPage'
 import LoginPage from './components/LoginPage'
+import ImpressumPage from './components/ImpressumPage'
+import PrivacyPolicyPage from './components/PrivacyPolicyPage'
 import AIAssistantWidget from './components/AIAssistantWidget'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
-type AppView = 'landing' | 'login' | 'dashboard'
+type AppView = 'landing' | 'login' | 'dashboard' | 'impressum' | 'privacy'
 export type Theme = 'light' | 'dark'
 
 function AppInner() {
@@ -76,12 +78,22 @@ function AppInner() {
     )
   }
 
+  if (view === 'impressum') {
+    return <ImpressumPage onBack={() => setView('landing')} />
+  }
+
+  if (view === 'privacy') {
+    return <PrivacyPolicyPage onBack={() => setView('landing')} />
+  }
+
   if (view === 'landing') {
     return (
       <>
         <LandingPage
           onEnterDashboard={handleEnterDashboard}
           onSubscribe={handleSubscribe}
+          onShowImpressum={() => setView('impressum')}
+          onShowPrivacy={() => setView('privacy')}
         />
         <AIAssistantWidget selectedRole={selectedRole} />
       </>
