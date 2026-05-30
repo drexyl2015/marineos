@@ -11,10 +11,7 @@ class Settings(BaseSettings):
     CLAUDE_API_KEY: str = ""
 
     # Email — all optional; email notifications are skipped if not configured
-    EMAIL_HOST: Optional[str] = None
-    EMAIL_PORT: Optional[int] = None
-    EMAIL_USERNAME: Optional[str] = None
-    EMAIL_PASSWORD: Optional[str] = None
+    RESEND_API_KEY: Optional[str] = None
     NOTIFY_EMAIL: Optional[str] = None
 
     # Security — SECRET_KEY has no default; it must be set in .env

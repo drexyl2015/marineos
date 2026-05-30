@@ -3,10 +3,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Optional
 import logging
-import smtplib
-import ssl
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import resend
 from app.config import settings
 from concurrent.futures import ThreadPoolExecutor
 import asyncio
@@ -25,35 +22,19 @@ class SubscribeRequest(BaseModel):
 
 
 def _send_notification(data: SubscribeRequest):
-    host = settings.EMAIL_HOST
-    port = settings.EMAIL_PORT
-    username = settings.EMAIL_USERNAME
-    password = settings.EMAIL_PASSWORD
+    api_key = settings.RESEND_API_KEY
     notify_to = settings.NOTIFY_EMAIL
 
-    if not username or not password or password == "your-yahoo-app-password-here":
-        logger.warning(
-            "Email credentials not configured; skipping notification email.")
+    if not api_key or not notify_to:
+        logger.warning("RESEND_API_KEY or NOTIFY_EMAIL not configured; skipping email.")
         return
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"New Access Request: {data.name} from {data.company}"
-    msg["From"] = username
-    msg["To"] = notify_to
-
-    plain = (
-        f"New access request received on MarineDoc System:\n\n"
-        f"Name:     {data.name}\n"
-        f"Email:    {data.email}\n"
-        f"Company:  {data.company}\n"
-        f"Role:     {data.role}\n"
-        f"Message:  {data.message or '(none)'}\n"
-    )
+    resend.api_key = api_key
 
     html = f"""
 <html><body style="font-family: Arial, sans-serif; color: #333; padding: 20px;">
   <h2 style="color: #1a5f7a; border-bottom: 2px solid #1a5f7a; padding-bottom: 8px;">
-    New Access Request &mdash; MarineDoc System
+    New Access Request &mdash; MarineOS
   </h2>
   <table style="border-collapse: collapse; width: 100%; max-width: 560px; margin-top: 16px;">
     <tr>
@@ -78,21 +59,18 @@ def _send_notification(data: SubscribeRequest):
     </tr>
   </table>
   <p style="margin-top: 24px; font-size: 12px; color: #888;">
-    This notification was sent automatically by MarineDoc System.
+    This notification was sent automatically by MarineOS.
   </p>
 </body></html>
 """
 
-    msg.attach(MIMEText(plain, "plain"))
-    msg.attach(MIMEText(html, "html"))
-
     try:
-        with smtplib.SMTP(host, port, timeout=15) as server:
-            server.ehlo()
-            server.starttls(context=ssl.create_default_context())
-            server.ehlo()
-            server.login(username, password)
-            server.sendmail(username, notify_to, msg.as_string())
+        resend.Emails.send({
+            "from": "MarineOS <onboarding@resend.dev>",
+            "to": [notify_to],
+            "subject": f"New Access Request: {data.name} from {data.company}",
+            "html": html,
+        })
         logger.info("Notification email sent to %s", notify_to)
     except Exception as exc:
         logger.error("Failed to send notification email: %s", exc)
