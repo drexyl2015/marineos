@@ -5,6 +5,7 @@ import LandingPage from './components/LandingPage'
 import LoginPage from './components/LoginPage'
 import ImpressumPage from './components/ImpressumPage'
 import PrivacyPolicyPage from './components/PrivacyPolicyPage'
+import CookieBanner from './components/CookieBanner'
 import AIAssistantWidget from './components/AIAssistantWidget'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import axios from 'axios'
@@ -96,6 +97,7 @@ function AppInner() {
           onShowPrivacy={() => setView('privacy')}
         />
         <AIAssistantWidget selectedRole={selectedRole} />
+        <CookieBanner onShowPrivacy={() => setView('privacy')} />
       </>
     )
   }
