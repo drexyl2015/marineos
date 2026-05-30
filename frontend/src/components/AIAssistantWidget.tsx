@@ -1,8 +1,11 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Ship, X, Send, ChevronDown, Sparkles } from 'lucide-react'
 import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const BTN = 56
+const PANEL_W = 384
+const PANEL_H = 520
 
 interface Message {
   role: 'user' | 'assistant'
@@ -43,6 +46,17 @@ const TOOL_LABELS: Record<string, string> = {
   get_watchkeeping_requirements: 'Watchkeeping',
 }
 
+function clamp(val: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, val))
+}
+
+function defaultPos() {
+  return {
+    x: window.innerWidth - BTN - 24,
+    y: window.innerHeight - BTN - 24,
+  }
+}
+
 function ToolBadge({ name }: { name: string }) {
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sea-900/60 border border-sea-500/30 text-sea-400 text-[10px] font-medium">
@@ -79,8 +93,31 @@ export default function AIAssistantWidget({ selectedRole }: AIAssistantWidgetPro
   const [history, setHistory] = useState<unknown[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const isDragging = useRef(false)
+  const hasMoved = useRef(false)
+  const dragOffset = useRef({ dx: 0, dy: 0 })
+
+  // Initialise position after mount (needs window)
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('ai_widget_pos')
+      if (saved) {
+        const p = JSON.parse(saved)
+        // Re-clamp in case window size changed since last visit
+        setPos({
+          x: clamp(p.x, 0, window.innerWidth - BTN),
+          y: clamp(p.y, 0, window.innerHeight - BTN),
+        })
+      } else {
+        setPos(defaultPos())
+      }
+    } catch {
+      setPos(defaultPos())
+    }
+  }, [])
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -93,6 +130,60 @@ export default function AIAssistantWidget({ selectedRole }: AIAssistantWidgetPro
       setTimeout(() => inputRef.current?.focus(), 250)
     }
   }, [open])
+
+  // --- Drag handlers using Pointer Events ---
+  const onPointerDown = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!pos) return
+    e.preventDefault()
+    isDragging.current = true
+    hasMoved.current = false
+    dragOffset.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y }
+    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+  }, [pos])
+
+  const onPointerMove = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!isDragging.current) return
+    hasMoved.current = true
+    setPos({
+      x: clamp(e.clientX - dragOffset.current.dx, 0, window.innerWidth - BTN),
+      y: clamp(e.clientY - dragOffset.current.dy, 0, window.innerHeight - BTN),
+    })
+  }, [])
+
+  const onPointerUp = useCallback((e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!isDragging.current) return
+    isDragging.current = false
+    if (!hasMoved.current) {
+      setOpen(o => !o)
+    } else {
+      setPos(prev => {
+        if (prev) localStorage.setItem('ai_widget_pos', JSON.stringify(prev))
+        return prev
+      })
+    }
+  }, [])
+
+  // --- Panel position (above or below button, clamped to viewport) ---
+  const panelStyle = pos
+    ? (() => {
+        const isMobile = window.innerWidth < 640
+        if (isMobile) {
+          return {
+            left: 16,
+            right: 16,
+            top: pos.y - PANEL_H - 16 >= 0
+              ? pos.y - PANEL_H - 16
+              : pos.y + BTN + 8,
+            width: undefined as undefined,
+          }
+        }
+        const top = pos.y - PANEL_H - 16 >= 0
+          ? pos.y - PANEL_H - 16
+          : pos.y + BTN + 8
+        const left = clamp(pos.x - PANEL_W + BTN, 16, window.innerWidth - PANEL_W - 16)
+        return { top, left, right: undefined, width: PANEL_W }
+      })()
+    : null
 
   const sendMessage = async (text?: string) => {
     const userMsg = (text ?? input).trim()
@@ -143,24 +234,40 @@ export default function AIAssistantWidget({ selectedRole }: AIAssistantWidgetPro
     }
   }
 
+  if (!pos) return null
+
   return (
     <>
-      {/* Toggle button */}
+      {/* Draggable toggle button */}
       <button
         type="button"
-        onClick={() => setOpen(o => !o)}
         aria-label={open ? 'Close AI Assistant' : 'Open AI Assistant'}
-        className="fixed bottom-6 right-6 z-[200] w-14 h-14 rounded-full bg-sea-600 hover:bg-sea-500 text-white shadow-lg shadow-sea-900/50 flex items-center justify-center transition-all duration-200 hover:scale-110 ring-2 ring-sea-400/30"
-        style={{ boxShadow: '0 0 20px rgba(16,185,129,0.35), 0 4px 16px rgba(0,0,0,0.5)' }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        style={{
+          position: 'fixed',
+          left: pos.x,
+          top: pos.y,
+          zIndex: 200,
+          cursor: isDragging.current ? 'grabbing' : 'grab',
+          touchAction: 'none',
+          boxShadow: '0 0 20px rgba(16,185,129,0.35), 0 4px 16px rgba(0,0,0,0.5)',
+        }}
+        className="w-14 h-14 rounded-full bg-sea-600 hover:bg-sea-500 text-white shadow-lg shadow-sea-900/50 flex items-center justify-center ring-2 ring-sea-400/30 select-none"
       >
         {open ? <ChevronDown className="w-6 h-6" /> : <Ship className="w-6 h-6" />}
       </button>
 
       {/* Chat panel */}
-      {open && (
+      {open && panelStyle && (
         <div
-          className="fixed bottom-24 right-4 left-4 sm:left-auto sm:right-6 sm:w-96 z-[200] h-[520px] rounded-2xl flex flex-col shadow-2xl chat-panel-enter overflow-hidden"
+          className="fixed z-[200] h-[520px] rounded-2xl flex flex-col shadow-2xl chat-panel-enter overflow-hidden"
           style={{
+            top: panelStyle.top,
+            left: panelStyle.left,
+            right: panelStyle.right,
+            width: panelStyle.width,
             background: 'rgba(15,23,42,0.97)',
             border: '1px solid rgba(255,255,255,0.1)',
             backdropFilter: 'blur(20px)',
