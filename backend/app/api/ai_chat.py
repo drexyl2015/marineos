@@ -6,7 +6,7 @@ from typing import Any
 from app.database import get_db
 from app.ai_service import ai_service
 from app import models
-from app.auth_utils import get_current_user
+from app.auth_utils import get_optional_user
 
 router = APIRouter()
 
@@ -21,7 +21,7 @@ class ChatRequest(BaseModel):
 async def chat(
     req: ChatRequest,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    current_user: models.User | None = Depends(get_optional_user),
 ):
     """Agentic chat endpoint — Claude with 17 maritime tools."""
     try:

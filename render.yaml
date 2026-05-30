@@ -13,7 +13,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: CORS_ORIGINS
-        value: '["https://marineos.vercel.app","http://localhost:5173"]'
+        value: '["https://marineos-wine.vercel.app","http://localhost:5173"]'
       - key: DEBUG
         value: "false"
       - key: RELOAD
