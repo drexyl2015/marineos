@@ -159,7 +159,7 @@ export default function AIAssistantWidget({ selectedRole }: AIAssistantWidgetPro
       {/* Chat panel */}
       {open && (
         <div
-          className="fixed bottom-24 right-6 z-[200] w-96 h-[520px] rounded-2xl flex flex-col shadow-2xl chat-panel-enter overflow-hidden"
+          className="fixed bottom-24 right-4 left-4 sm:left-auto sm:right-6 sm:w-96 z-[200] h-[520px] rounded-2xl flex flex-col shadow-2xl chat-panel-enter overflow-hidden"
           style={{
             background: 'rgba(15,23,42,0.97)',
             border: '1px solid rgba(255,255,255,0.1)',
