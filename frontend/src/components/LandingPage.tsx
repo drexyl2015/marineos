@@ -53,7 +53,7 @@ export default function LandingPage({ onEnterDashboard, onSubscribe, onShowImpre
         onEnterDashboard={onEnterDashboard}
         onOpenSubscribe={() => setShowSubscribeModal(true)}
       />
-      <FooterSection />
+      <FooterSection onShowPrivacy={onShowPrivacy} onShowImpressum={onShowImpressum} />
 
       {showSubscribeModal && (
         <SubscribeModal
@@ -598,7 +598,7 @@ function PricingSection({ onOpenSubscribe }: { onOpenSubscribe: () => void }) {
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
 
-function FooterSection() {
+function FooterSection({ onShowPrivacy, onShowImpressum }: { onShowPrivacy: () => void; onShowImpressum: () => void }) {
   return (
     <footer className="bg-navy-950 border-t border-white/5 py-14">
       <div className="max-w-7xl mx-auto px-6">

@@ -107,6 +107,7 @@ class User(Base):
     full_name = Column(String(255))
     role = Column(String(50), default="crew_manager")
     is_active = Column(Boolean, default=True)
+    trial_expires_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class ComplianceBriefing(Base):

@@ -15,7 +15,6 @@ export default function LoginPage({ onEnterDashboard, onBackToHome }: LoginPageP
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
-  const [role, setRole] = useState('crew_manager')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -28,7 +27,7 @@ export default function LoginPage({ onEnterDashboard, onBackToHome }: LoginPageP
       if (tab === 'login') {
         await login(email, password)
       } else {
-        await register(email, password, fullName || undefined, role)
+        await register(email, password, fullName || undefined)
       }
       onEnterDashboard()
     } catch (err: any) {
@@ -68,20 +67,6 @@ export default function LoginPage({ onEnterDashboard, onBackToHome }: LoginPageP
                 <input type="text" value={fullName} onChange={e => setFullName(e.target.value)}
                   placeholder="John Smith"
                   className="w-full px-4 py-2.5 bg-navy-800 border border-white/10 rounded-xl text-white placeholder-steel-500 focus:outline-none focus:ring-2 focus:ring-sea-500 text-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-steel-300 mb-1">Role</label>
-                <select value={role} onChange={e => setRole(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-navy-800 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-sea-500 text-sm">
-                  <option value="super_admin">Super Admin</option>
-                  <option value="crew_manager">Crew Manager</option>
-                  <option value="compliance_officer">Compliance Officer</option>
-                  <option value="master">Master</option>
-                  <option value="seafarer">Seafarer</option>
-                  <option value="fleet_ops">Fleet Ops</option>
-                  <option value="port_authority">Port Authority</option>
-                  <option value="crew_agency">Crew Agency</option>
-                </select>
               </div>
             </>
           )}

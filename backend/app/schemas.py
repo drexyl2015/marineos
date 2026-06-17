@@ -166,7 +166,6 @@ class UserCreate(BaseModel):
     email: str
     password: str
     full_name: Optional[str] = None
-    role: str = "crew_manager"
 
 class UserLogin(BaseModel):
     email: str
@@ -182,6 +181,7 @@ class UserResponse(BaseModel):
     full_name: Optional[str]
     role: str
     is_active: bool
+    trial_expires_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
