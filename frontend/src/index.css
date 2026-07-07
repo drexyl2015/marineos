@@ -21,6 +21,17 @@ code {
     monospace;
 }
 
+@layer components {
+  /* Standard dashboard panel — pair with a padding utility, e.g. `card p-6` */
+  .card {
+    @apply bg-white rounded-xl border border-gray-200 shadow-sm;
+  }
+  /* Standard table header row */
+  .table-head {
+    @apply bg-gray-50 text-xs uppercase tracking-wider text-gray-500;
+  }
+}
+
 .progress-cert {
   appearance: none;
 }
@@ -150,6 +161,8 @@ code {
 /* ── Dark Mode Overrides ── */
 .dark body { background-color: #0f172a; color: #f1f5f9; }
 
+.dark .card            { background-color: #1e293b !important; border-color: #334155 !important; }
+.dark .table-head      { background-color: #0f172a !important; color: #94a3b8 !important; }
 .dark .bg-white        { background-color: #1e293b !important; }
 .dark .bg-gray-50      { background-color: #0f172a !important; }
 .dark .bg-gray-100     { background-color: #1e293b !important; }

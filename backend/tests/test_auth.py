@@ -1,4 +1,8 @@
 """Auth endpoint tests"""
+from app.config import settings
+from app.bootstrap import ensure_owner_user
+from app.auth_utils import verify_password
+from app import models
 
 
 def test_register_new_user(client):
@@ -12,6 +16,16 @@ def test_register_new_user(client):
     data = res.json()
     assert "access_token" in data
     assert data["token_type"] == "bearer"
+
+
+def test_register_disabled_by_default_for_private_access(client):
+    settings.ALLOW_PUBLIC_REGISTRATION = False
+    res = client.post("/api/auth/register", json={
+        "email": "blocked@example.com",
+        "password": "securepassword",
+        "full_name": "Blocked User",
+    })
+    assert res.status_code == 403
 
 
 def test_register_duplicate_email(client):
@@ -49,3 +63,19 @@ def test_get_me(client):
 def test_get_me_invalid_token(client):
     res = client.get("/api/auth/me", headers={"Authorization": "Bearer invalid.token.here"})
     assert res.status_code == 401
+
+
+def test_owner_account_bootstrap_creates_super_admin(db):
+    settings.OWNER_EMAIL = "owner@example.com"
+    settings.OWNER_PASSWORD = "ownerpassword123"
+    settings.OWNER_FULL_NAME = "MarineOS Owner"
+    settings.OWNER_ROLE = "super_admin"
+
+    ensure_owner_user(db)
+
+    owner = db.query(models.User).filter(models.User.email == "owner@example.com").first()
+    assert owner is not None
+    assert owner.role == "super_admin"
+    assert owner.full_name == "MarineOS Owner"
+    assert owner.is_active is True
+    assert verify_password("ownerpassword123", owner.hashed_password)

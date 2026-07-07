@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import axios from 'axios'
 import { AlertCircle, CheckCircle, FileText, Search, Shield } from 'lucide-react'
 import StatCard from '../shared/StatCard'
+import { api } from '../../lib/api'
+import { daysUntil } from '../../lib/dates'
+import type { DashboardData } from '../../types'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-
-export default function PortAuthorityDashboard({ data }: { data: any }) {
+export default function PortAuthorityDashboard({ data }: { data: DashboardData }) {
   const [portInput, setPortInput] = useState('')
   const [inspLoading, setInspLoading] = useState(false)
   const [inspResult, setInspResult] = useState<string | null>(null)
@@ -15,7 +15,7 @@ export default function PortAuthorityDashboard({ data }: { data: any }) {
     setInspLoading(true)
     setInspResult(null)
     try {
-      const res = await axios.post(`${API_URL}/api/ai/generate-briefing`, null, {
+      const res = await api.post('/api/ai/generate-briefing', null, {
         params: { vessel_id: 1, port_name: portInput.trim() }
       })
       const content = res.data?.briefing?.briefing || res.data?.briefing || JSON.stringify(res.data?.briefing)
@@ -27,15 +27,15 @@ export default function PortAuthorityDashboard({ data }: { data: any }) {
     }
   }
 
-  const highAlerts = data?.alerts?.filter((a: any) => a.severity === 'high') || []
-  const pscRisk = data?.expiringCerts > 3 ? 'HIGH' : data?.expiringCerts > 0 ? 'MEDIUM' : 'LOW'
+  const highAlerts = data.alerts.filter(a => a.severity === 'high')
+  const pscRisk = data.expiringCerts > 3 ? 'HIGH' : data.expiringCerts > 0 ? 'MEDIUM' : 'LOW'
   const pscColor = pscRisk === 'HIGH' ? 'bg-red-100 text-red-800' : pscRisk === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
 
   return (
     <div className="max-w-7xl mx-auto p-4 space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={<Shield className="w-6 h-6" />} label="PSC Risk Level" value={pscRisk} color={pscRisk === 'LOW' ? 'green' : 'orange'} />
-        <StatCard icon={<FileText className="w-6 h-6" />} label="Expiring Certs" value={data?.expiringCerts || 0} color={data?.expiringCerts > 0 ? 'orange' : 'green'} />
+        <StatCard icon={<FileText className="w-6 h-6" />} label="Expiring Certs" value={data.expiringCerts} color={data.expiringCerts > 0 ? 'orange' : 'green'} />
         <StatCard icon={<AlertCircle className="w-6 h-6" />} label="High Severity Alerts" value={highAlerts.length} color={highAlerts.length > 0 ? 'orange' : 'green'} />
         <StatCard icon={<CheckCircle className="w-6 h-6" />} label="SOLAS Compliance" value="100%" color="green" />
       </div>
@@ -49,12 +49,12 @@ export default function PortAuthorityDashboard({ data }: { data: any }) {
           <p className={`text-sm mt-1 ${pscRisk === 'LOW' ? 'text-green-700' : 'text-yellow-700'}`}>
             {pscRisk === 'LOW'
               ? 'All documentation appears current. Vessel ready for PSC inspection.'
-              : `${data?.expiringCerts} certificate(s) require attention before port arrival.`}
+              : `${data.expiringCerts} certificate(s) require attention before port arrival.`}
           </p>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="card p-6">
         <h2 className="text-lg font-bold mb-2 flex items-center gap-2">
           <Search className="w-5 h-5 text-marine-600" /> Vessel Compliance Check
         </h2>
@@ -76,25 +76,25 @@ export default function PortAuthorityDashboard({ data }: { data: any }) {
         )}
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="card p-6">
         <h2 className="text-lg font-bold mb-4">Certificate Deficiencies</h2>
-        {data?.expiringCertsList?.length > 0 ? (
+        {data.expiringCertsList.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-100">
+              <thead className="table-head">
                 <tr>
-                  <th className="px-4 py-2 text-left">Certificate Type</th>
-                  <th className="px-4 py-2 text-left">Expiry Date</th>
-                  <th className="px-4 py-2 text-left">Days Remaining</th>
-                  <th className="px-4 py-2 text-left">PSC Risk</th>
+                  <th className="px-4 py-2.5 text-left font-semibold">Certificate Type</th>
+                  <th className="px-4 py-2.5 text-left font-semibold">Expiry Date</th>
+                  <th className="px-4 py-2.5 text-left font-semibold">Days Remaining</th>
+                  <th className="px-4 py-2.5 text-left font-semibold">PSC Risk</th>
                 </tr>
               </thead>
               <tbody>
-                {data.expiringCertsList.map((c: any, i: number) => {
-                  const days = Math.floor((new Date(c.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                {data.expiringCertsList.map(c => {
+                  const days = daysUntil(c.expiry_date)
                   return (
-                    <tr key={i} className="border-t hover:bg-gray-50">
-                      <td className="px-4 py-2 font-medium">{c.certificate_type}</td>
+                    <tr key={c.id} className="border-t hover:bg-gray-50">
+                      <td className="px-4 py-2 font-medium">{c.type}</td>
                       <td className="px-4 py-2">{c.expiry_date}</td>
                       <td className="px-4 py-2">{days} days</td>
                       <td className="px-4 py-2">

@@ -6,8 +6,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
-from app.database import Base, engine
+from app.database import Base, SessionLocal, engine
 from app.config import settings
+from app.bootstrap import ensure_owner_user
 
 # Configure logging
 logging.basicConfig(level=settings.LOG_LEVEL)
@@ -19,6 +20,11 @@ async def lifespan(app: FastAPI):
     # Startup: Create tables
     Base.metadata.create_all(bind=engine)
     logger.info("Database tables created successfully")
+    db = SessionLocal()
+    try:
+        ensure_owner_user(db)
+    finally:
+        db.close()
     yield
     # Shutdown
     logger.info("Application shutting down")

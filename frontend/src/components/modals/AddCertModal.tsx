@@ -1,10 +1,8 @@
 import { useState } from 'react'
-import axios from 'axios'
 import { AlertCircle, CheckCircle, Eye, FileText, Upload } from 'lucide-react'
 import ModalOverlay from '../shared/ModalOverlay'
 import { CERT_TYPES } from '../../constants/maritime'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+import { api } from '../../lib/api'
 
 type CertModalStage = 'upload' | 'parsing' | 'review'
 
@@ -42,7 +40,7 @@ export default function AddCertModal({ crewId, crewName, onClose, onSuccess }: {
     try {
       const fd = new FormData()
       fd.append('file', file)
-      const res = await axios.post(`${API_URL}/api/ai/parse-certificate-image`, fd, {
+      const res = await api.post('/api/ai/parse-certificate-image', fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       const d = res.data
@@ -85,7 +83,7 @@ export default function AddCertModal({ crewId, crewName, onClose, onSuccess }: {
       const certType = form.certificate_type === 'Other'
         ? (form.other_type.trim() || 'Other')
         : form.certificate_type
-      await axios.post(`${API_URL}/api/certificates/`, {
+      await api.post('/api/certificates/', {
         crew_id: crewId,
         certificate_type: certType,
         issue_date: form.issue_date,

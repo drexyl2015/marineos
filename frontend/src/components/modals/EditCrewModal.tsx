@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import axios from 'axios'
 import { AlertCircle, FileText, Pencil, Trash2, X } from 'lucide-react'
 import { NATIONALITIES, POSITIONS, STATUSES, CERT_TYPES } from '../../constants/maritime'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+import { api } from '../../lib/api'
+import type { Certificate } from '../../types'
 
 interface EditCrewModalProps {
   crew: {
@@ -12,7 +11,7 @@ interface EditCrewModalProps {
     position: string
     status: string
     nationality: string
-    certificates?: any[]
+    certificates?: Certificate[]
   }
   onClose: () => void
   onSuccess: () => void
@@ -28,7 +27,7 @@ export default function EditCrewModal({ crew, onClose, onSuccess }: EditCrewModa
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const [certs, setCerts] = useState<any[]>(crew.certificates || [])
+  const [certs, setCerts] = useState<Certificate[]>(crew.certificates || [])
   const [editingCertId, setEditingCertId] = useState<number | null>(null)
   const [certForm, setCertForm] = useState<any>({})
   const [certSaving, setCertSaving] = useState(false)
@@ -42,7 +41,7 @@ export default function EditCrewModal({ crew, onClose, onSuccess }: EditCrewModa
     setSubmitting(true)
     setError(null)
     try {
-      await axios.put(`${API_URL}/api/crew/${crew.id}`, {
+      await api.put(`/api/crew/${crew.id}`, {
         name: form.name.trim(),
         position: form.position,
         status: form.status,
@@ -57,7 +56,7 @@ export default function EditCrewModal({ crew, onClose, onSuccess }: EditCrewModa
     }
   }
 
-  const startEditCert = (cert: any) => {
+  const startEditCert = (cert: Certificate) => {
     setEditingCertId(cert.id)
     setCertForm({
       certificate_type: cert.type,
@@ -72,7 +71,7 @@ export default function EditCrewModal({ crew, onClose, onSuccess }: EditCrewModa
     setCertSaving(true)
     setCertError(null)
     try {
-      await axios.put(`${API_URL}/api/certificates/${certId}`, certForm)
+      await api.put(`/api/certificates/${certId}`, certForm)
       setCerts(prev => prev.map(c => c.id === certId ? {
         ...c,
         type: certForm.certificate_type,
@@ -92,7 +91,7 @@ export default function EditCrewModal({ crew, onClose, onSuccess }: EditCrewModa
   const deleteCert = async (certId: number, certType: string) => {
     if (!window.confirm(`Delete "${certType}"? This cannot be undone.`)) return
     try {
-      await axios.delete(`${API_URL}/api/certificates/${certId}`)
+      await api.delete(`/api/certificates/${certId}`)
       setCerts(prev => prev.filter(c => c.id !== certId))
       onSuccess()
     } catch {

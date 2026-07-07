@@ -79,3 +79,38 @@ See `README.md` for detailed troubleshooting
 ---
 
 **Everything is ready! Just run the setup script and open your browser.** 🚀
+
+---
+
+## Verifying Changes
+
+Before committing, run the checks (Python 3.11 required):
+
+```powershell
+# From the repo root — runs backend tests + frontend type-check + build
+powershell -ExecutionPolicy Bypass -File .\check.ps1
+```
+
+Or individually:
+
+```powershell
+# Backend
+cd backend
+.\venv\Scripts\activate
+pytest tests -q
+
+# Frontend
+cd ..\frontend
+npm run type-check
+npm run build
+```
+
+If the backend `venv` is broken (e.g. it points at a missing Python 3.12), recreate it:
+
+```powershell
+cd backend
+Remove-Item -Recurse -Force .\venv
+py -3.11 -m venv venv
+.\venv\Scripts\activate
+pip install -r requirements.txt
+```

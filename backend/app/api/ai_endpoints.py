@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.ai_service import ai_service
 from app import schemas, models
+from app.auth_utils import get_current_user, require_manager
 from typing import Optional
 
 router = APIRouter()
@@ -12,7 +13,8 @@ router = APIRouter()
 async def parse_document(
     file: UploadFile = File(...),
     document_type: str = "certificate",
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_manager),
 ):
     """
     Upload a maritime document and extract structured data using Claude AI.
@@ -34,7 +36,10 @@ async def parse_document(
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/parse-certificate-image", response_model=dict)
-async def parse_certificate_image(file: UploadFile = File(...)):
+async def parse_certificate_image(
+    file: UploadFile = File(...),
+    current_user: models.User = Depends(require_manager),
+):
     """
     Upload a certificate photo or scan; Claude vision extracts the fields.
     Returns: certificate_type, issue_date, expiry_date, issuing_authority, confidence.
@@ -57,7 +62,8 @@ async def parse_certificate_image(file: UploadFile = File(...)):
 async def check_compliance(
     crew_id: int,
     regulation_type: str = "STCW",
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_manager),
 ):
     """
     Verify crew member against maritime regulations.
@@ -81,7 +87,8 @@ async def check_compliance(
 async def recommend_crew(
     vessel_id: int,
     position: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_manager),
 ):
     """
     Get AI recommendations for crew assignments.
@@ -108,7 +115,8 @@ async def recommend_crew(
 async def generate_briefing(
     vessel_id: int,
     port_name: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_manager),
 ):
     """
     Generate port arrival compliance briefing.
@@ -147,7 +155,8 @@ async def generate_briefing(
 @router.post("/assess-risks", response_model=dict)
 async def assess_risks(
     crew_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_manager),
 ):
     """
     Predictive compliance risk assessment.
@@ -182,7 +191,10 @@ async def assess_risks(
     }
 
 @router.get("/crew-pool-analysis", response_model=dict)
-async def crew_pool_analysis(db: Session = Depends(get_db)):
+async def crew_pool_analysis(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_manager),
+):
     """
     Strategic workforce analysis.
     Provides insights on:

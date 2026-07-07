@@ -22,5 +22,7 @@ services:
         value: "INFO"
       - key: PYTHON_VERSION
         value: "3.11.0"
+      # MarineOS is invite-only: accounts are provisioned by the owner/super-admin,
+      # not self-service signup. Keep this aligned with the backend default (False).
       - key: ALLOW_PUBLIC_REGISTRATION
-        value: "true"
+        value: "false"

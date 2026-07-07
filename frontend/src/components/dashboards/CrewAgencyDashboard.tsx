@@ -1,34 +1,36 @@
 import { useState } from 'react'
 import { Anchor, FileText, Globe, Search, Users } from 'lucide-react'
 import StatCard from '../shared/StatCard'
+import type { DashboardData } from '../../types'
 
-export default function CrewAgencyDashboard({ data }: { data: any }) {
+export default function CrewAgencyDashboard({ data }: { data: DashboardData }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterPosition, setFilterPosition] = useState('all')
 
-  const availableCrew = data?.crew?.filter((c: any) => c.status === 'available') || []
-  const positions = ['all', ...new Set(availableCrew.map((c: any) => c.position))] as string[]
+  const availableCrew = data.crew.filter(c => c.status === 'available')
+  const positions = ['all', ...new Set(availableCrew.map(c => c.position))]
 
-  const filtered = availableCrew.filter((c: any) => {
-    const matchSearch = c.name?.toLowerCase().includes(searchQuery.toLowerCase())
-      || c.position?.toLowerCase().includes(searchQuery.toLowerCase())
-      || c.nationality?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filtered = availableCrew.filter(c => {
+    const q = searchQuery.toLowerCase()
+    const matchSearch = c.name?.toLowerCase().includes(q)
+      || c.position?.toLowerCase().includes(q)
+      || c.nationality?.toLowerCase().includes(q)
     const matchPosition = filterPosition === 'all' || c.position === filterPosition
     return matchSearch && matchPosition
   })
 
   const certCountForCrew = (crewId: number) =>
-    (data?.certificates || []).filter((c: any) => c.crew_id === crewId).length
+    data.certificates.filter(c => c.crew_id === crewId).length
 
   return (
     <div className="max-w-7xl mx-auto p-4 space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard icon={<Users className="w-6 h-6" />} label="Available for Placement" value={availableCrew.length} color="green" />
         <StatCard icon={<Anchor className="w-6 h-6" />} label="Positions Available" value={positions.length - 1} color="blue" />
-        <StatCard icon={<FileText className="w-6 h-6" />} label="Total Certifications" value={data?.totalCerts || 0} color="purple" />
+        <StatCard icon={<FileText className="w-6 h-6" />} label="Total Certifications" value={data.totalCerts} color="purple" />
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="card p-6">
         <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
           <Search className="w-5 h-5 text-marine-600" /> Available Crew Pool
         </h2>
@@ -55,8 +57,8 @@ export default function CrewAgencyDashboard({ data }: { data: any }) {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered.map((c: any) => (
-              <div key={c.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+            {filtered.map(c => (
+              <div key={c.id} className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between mb-3">
                   <div className="w-10 h-10 rounded-full bg-marine-100 flex items-center justify-center text-marine-700 font-bold text-lg flex-shrink-0">
                     {c.name?.charAt(0) || '?'}

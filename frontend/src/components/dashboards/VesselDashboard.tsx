@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
 import { AlertCircle, Plus, Pencil, Trash2, Ship, Users, X, Anchor } from 'lucide-react'
 import StatCard from '../shared/StatCard'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+import { api } from '../../lib/api'
+import type { Crew } from '../../types'
 
 const VESSEL_TYPES = ['Bulk Carrier', 'Container Ship', 'Tanker', 'General Cargo', 'RoRo', 'Passenger', 'Offshore', 'Tug', 'Other']
 const FLAG_STATES = ['Panama', 'Liberia', 'Marshall Islands', 'Hong Kong', 'Singapore', 'Bahamas', 'Malta', 'Cyprus', 'UK', 'Norway', 'Other']
@@ -18,7 +17,7 @@ interface Vessel {
   crew_count: number
 }
 
-export default function VesselDashboard({ crewList }: { crewList: any[] }) {
+export default function VesselDashboard({ crewList }: { crewList: Crew[] }) {
   const [vessels, setVessels] = useState<Vessel[]>([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
@@ -27,7 +26,7 @@ export default function VesselDashboard({ crewList }: { crewList: any[] }) {
 
   const loadVessels = async () => {
     try {
-      const res = await axios.get(`${API_URL}/api/vessels/`)
+      const res = await api.get('/api/vessels/')
       setVessels(res.data.vessels || [])
     } catch {
       // ignore
@@ -41,7 +40,7 @@ export default function VesselDashboard({ crewList }: { crewList: any[] }) {
   const deleteVessel = async (id: number, name: string) => {
     if (!window.confirm(`Delete vessel "${name}"? This cannot be undone.`)) return
     try {
-      await axios.delete(`${API_URL}/api/vessels/${id}`)
+      await api.delete(`/api/vessels/${id}`)
       loadVessels()
     } catch {
       alert('Failed to delete vessel.')
@@ -65,7 +64,7 @@ export default function VesselDashboard({ crewList }: { crewList: any[] }) {
         <StatCard icon={<Users className="w-6 h-6" />} label="Crew Deployed" value={totalCrew} color="purple" />
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="card p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold">Fleet Registry</h2>
           <button type="button" onClick={() => setShowAdd(true)}
@@ -90,15 +89,15 @@ export default function VesselDashboard({ crewList }: { crewList: any[] }) {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-100">
+              <thead className="table-head">
                 <tr>
-                  <th className="px-4 py-2 text-left">Vessel Name</th>
-                  <th className="px-4 py-2 text-left">IMO</th>
-                  <th className="px-4 py-2 text-left">Type</th>
-                  <th className="px-4 py-2 text-left">Flag State</th>
-                  <th className="px-4 py-2 text-left">Status</th>
-                  <th className="px-4 py-2 text-left">Crew</th>
-                  <th className="px-4 py-2 text-left">Actions</th>
+                  <th className="px-4 py-2.5 text-left font-semibold">Vessel Name</th>
+                  <th className="px-4 py-2.5 text-left font-semibold">IMO</th>
+                  <th className="px-4 py-2.5 text-left font-semibold">Type</th>
+                  <th className="px-4 py-2.5 text-left font-semibold">Flag State</th>
+                  <th className="px-4 py-2.5 text-left font-semibold">Status</th>
+                  <th className="px-4 py-2.5 text-left font-semibold">Crew</th>
+                  <th className="px-4 py-2.5 text-left font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -164,14 +163,14 @@ function VesselModal({ vessel, onClose, onSuccess }: {
     setError(null)
     try {
       if (vessel) {
-        await axios.put(`${API_URL}/api/vessels/${vessel.id}`, {
+        await api.put(`/api/vessels/${vessel.id}`, {
           name: form.name,
           vessel_type: form.vessel_type,
           flag_state: form.flag_state,
           status: form.status,
         })
       } else {
-        await axios.post(`${API_URL}/api/vessels/`, form)
+        await api.post('/api/vessels/', form)
       }
       onSuccess()
       onClose()
@@ -257,7 +256,7 @@ function VesselModal({ vessel, onClose, onSuccess }: {
 
 function AssignCrewModal({ vessel, crewList, onClose, onSuccess }: {
   vessel: Vessel
-  crewList: any[]
+  crewList: Crew[]
   onClose: () => void
   onSuccess: () => void
 }) {
@@ -273,7 +272,7 @@ function AssignCrewModal({ vessel, crewList, onClose, onSuccess }: {
     setSubmitting(true)
     setError(null)
     try {
-      await axios.post(`${API_URL}/api/assignments/`, {
+      await api.post('/api/assignments/', {
         crew_id: parseInt(crewId),
         vessel_id: vessel.id,
         position,

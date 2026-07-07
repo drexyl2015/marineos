@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Ship, AlertCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react'
+import { Ship, AlertCircle, Eye, EyeOff, ArrowLeft, LockKeyhole } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 interface LoginPageProps {
@@ -7,14 +7,10 @@ interface LoginPageProps {
   onBackToHome: () => void
 }
 
-type Tab = 'login' | 'register'
-
 export default function LoginPage({ onEnterDashboard, onBackToHome }: LoginPageProps) {
-  const { login, register } = useAuth()
-  const [tab, setTab] = useState<Tab>('login')
+  const { login } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [fullName, setFullName] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -24,14 +20,10 @@ export default function LoginPage({ onEnterDashboard, onBackToHome }: LoginPageP
     setLoading(true)
     setError(null)
     try {
-      if (tab === 'login') {
-        await login(email, password)
-      } else {
-        await register(email, password, fullName || undefined)
-      }
+      await login(email, password)
       onEnterDashboard()
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Authentication failed. Please try again.')
+      setError(err.response?.data?.detail || 'Sign-in failed. Check your owner credentials and try again.')
     } finally {
       setLoading(false)
     }
@@ -50,31 +42,21 @@ export default function LoginPage({ onEnterDashboard, onBackToHome }: LoginPageP
           <span className="text-2xl font-bold text-white">MarineOS</span>
         </div>
 
-        <div className="flex rounded-xl bg-navy-800 p-1 mb-6">
-          {(['login', 'register'] as Tab[]).map(t => (
-            <button key={t} type="button" onClick={() => { setTab(t); setError(null) }}
-              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${tab === t ? 'bg-sea-600 text-white' : 'text-steel-400 hover:text-white'}`}>
-              {t === 'login' ? 'Sign In' : 'Create Account'}
-            </button>
-          ))}
+        <div className="flex items-start gap-3 rounded-xl bg-navy-800/70 border border-white/10 p-4 mb-6">
+          <LockKeyhole className="w-5 h-5 text-sea-400 flex-shrink-0 mt-0.5" />
+          <div>
+            <h1 className="text-white font-semibold text-sm">Owner sign-in</h1>
+            <p className="text-steel-400 text-xs mt-1 leading-relaxed">
+              Dashboard access is private. Use the owner credentials configured for this deployment.
+            </p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {tab === 'register' && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-steel-300 mb-1">Full Name</label>
-                <input type="text" value={fullName} onChange={e => setFullName(e.target.value)}
-                  placeholder="John Smith"
-                  className="w-full px-4 py-2.5 bg-navy-800 border border-white/10 rounded-xl text-white placeholder-steel-500 focus:outline-none focus:ring-2 focus:ring-sea-500 text-sm" />
-              </div>
-            </>
-          )}
-
           <div>
             <label className="block text-sm font-medium text-steel-300 mb-1">Email</label>
             <input required type="email" value={email} onChange={e => setEmail(e.target.value)}
-              placeholder="you@company.com"
+              placeholder="owner@marineos.app"
               className="w-full px-4 py-2.5 bg-navy-800 border border-white/10 rounded-xl text-white placeholder-steel-500 focus:outline-none focus:ring-2 focus:ring-sea-500 text-sm" />
           </div>
 
@@ -99,7 +81,7 @@ export default function LoginPage({ onEnterDashboard, onBackToHome }: LoginPageP
 
           <button type="submit" disabled={loading}
             className="w-full py-2.5 bg-sea-600 hover:bg-sea-500 disabled:opacity-50 text-white font-semibold rounded-xl transition text-sm">
-            {loading ? (tab === 'login' ? 'Signing in…' : 'Creating account…') : (tab === 'login' ? 'Sign In' : 'Create Account')}
+            {loading ? 'Signing in…' : 'Sign In'}
           </button>
         </form>
 

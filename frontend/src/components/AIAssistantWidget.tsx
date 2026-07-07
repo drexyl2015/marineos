@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Ship, X, Send, ChevronDown, Sparkles } from 'lucide-react'
-import axios from 'axios'
+import { api } from '../lib/api'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const BTN = 56
 const PANEL_W = 384
 const PANEL_H = 520
@@ -192,7 +191,7 @@ export default function AIAssistantWidget({ selectedRole }: AIAssistantWidgetPro
     setMessages(prev => [...prev, { role: 'user', content: userMsg }])
     setLoading(true)
     try {
-      const res = await axios.post(`${API_URL}/api/ai/chat`, {
+      const res = await api.post('/api/ai/chat', {
         message: userMsg,
         history,
         context: { role: selectedRole },

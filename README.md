@@ -124,3 +124,47 @@ marine-document-system/
 ## License
 
 Built by Sadiq Dare. MIT License.
+
+---
+
+## Local Verification
+
+MarineOS targets **Python 3.11** (pinned in `backend/.python-version` and `render.yaml`)
+and Node.js for the frontend.
+
+### One-shot script (Windows)
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\check.ps1
+```
+
+This runs backend tests, the frontend type-check, and the frontend build.
+
+### Manual checks
+
+Backend (recreate the venv if it is stale or points at a missing Python):
+
+```powershell
+cd backend
+Remove-Item -Recurse -Force .\venv   # only if the existing venv is broken
+py -3.11 -m venv venv
+.\venv\Scripts\activate
+pip install -r requirements.txt
+$env:SECRET_KEY = "local-test-secret-key"   # required by config
+pytest tests -q
+```
+
+Frontend:
+
+```powershell
+cd frontend
+npm install
+npm run type-check
+npm run build
+```
+
+### Deployment
+
+- Backend (API): Render — see `render.yaml` (`marineos-api`).
+- Frontend: Vercel — project space https://vercel.com/dare-sadiq-s-projects
+  (deployed at `marineos-wine.vercel.app`, in the API CORS allowlist).

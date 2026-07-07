@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import schemas, models
-from app.auth_utils import get_current_user
+from app.auth_utils import get_current_user, require_manager
 from typing import List, Optional
 
 router = APIRouter()
@@ -74,7 +74,7 @@ async def get_crew(crew_id: int, db: Session = Depends(get_db), current_user: mo
 async def create_crew(
     crew: schemas.CrewCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(require_manager)
 ):
     """Create new crew member"""
     if crew.employee_id:
@@ -100,7 +100,7 @@ async def update_crew(
     crew_id: int,
     crew_update: schemas.CrewUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(require_manager)
 ):
     """Update crew member"""
     crew = db.query(models.Crew).filter(models.Crew.id == crew_id).first()
@@ -121,7 +121,7 @@ async def update_crew(
     }
 
 @router.delete("/{crew_id}", response_model=dict)
-async def delete_crew(crew_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+async def delete_crew(crew_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(require_manager)):
     """Delete crew member"""
     crew = db.query(models.Crew).filter(models.Crew.id == crew_id).first()
     if not crew:

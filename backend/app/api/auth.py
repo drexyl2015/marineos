@@ -4,12 +4,18 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from app.database import get_db
 from app import schemas, models
-from app.auth_utils import hash_password, verify_password, create_access_token, get_current_user
+from app.auth_utils import hash_password, verify_password, create_access_token, get_current_user, require_super_admin
+from app.config import settings
 
 router = APIRouter()
 
 @router.post("/register", response_model=schemas.Token)
 async def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
+    if not settings.ALLOW_PUBLIC_REGISTRATION:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Public registration is disabled. Sign in with an owner account.",
+        )
     if db.query(models.User).filter(models.User.email == user_in.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
     user = models.User(
@@ -45,10 +51,8 @@ async def grant_trial(
     user_id: int,
     days: int = 14,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user),
+    current_user: models.User = Depends(require_super_admin),
 ):
-    if current_user.role != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")

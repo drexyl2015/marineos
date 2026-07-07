@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Optional
 import logging
+import html as html_lib
 import resend
 from app.config import settings
 from concurrent.futures import ThreadPoolExecutor
@@ -31,6 +32,12 @@ def _send_notification(data: SubscribeRequest):
 
     resend.api_key = api_key
 
+    name = html_lib.escape(data.name)
+    email = html_lib.escape(data.email)
+    company = html_lib.escape(data.company)
+    role = html_lib.escape(data.role)
+    message = html_lib.escape(data.message) if data.message else '<em style="color:#999;">none</em>'
+
     html = f"""
 <html><body style="font-family: Arial, sans-serif; color: #333; padding: 20px;">
   <h2 style="color: #1a5f7a; border-bottom: 2px solid #1a5f7a; padding-bottom: 8px;">
@@ -39,23 +46,23 @@ def _send_notification(data: SubscribeRequest):
   <table style="border-collapse: collapse; width: 100%; max-width: 560px; margin-top: 16px;">
     <tr>
       <td style="padding: 10px 14px; font-weight: bold; width: 120px;">Name</td>
-      <td style="padding: 10px 14px;">{data.name}</td>
+      <td style="padding: 10px 14px;">{name}</td>
     </tr>
     <tr style="background:#f7f9fb;">
       <td style="padding: 10px 14px; font-weight: bold;">Email</td>
-      <td style="padding: 10px 14px;"><a href="mailto:{data.email}">{data.email}</a></td>
+      <td style="padding: 10px 14px;"><a href="mailto:{email}">{email}</a></td>
     </tr>
     <tr>
       <td style="padding: 10px 14px; font-weight: bold;">Company</td>
-      <td style="padding: 10px 14px;">{data.company}</td>
+      <td style="padding: 10px 14px;">{company}</td>
     </tr>
     <tr style="background:#f7f9fb;">
       <td style="padding: 10px 14px; font-weight: bold;">Role</td>
-      <td style="padding: 10px 14px;">{data.role}</td>
+      <td style="padding: 10px 14px;">{role}</td>
     </tr>
     <tr>
       <td style="padding: 10px 14px; font-weight: bold; vertical-align: top;">Message</td>
-      <td style="padding: 10px 14px;">{data.message or '<em style="color:#999;">none</em>'}</td>
+      <td style="padding: 10px 14px;">{message}</td>
     </tr>
   </table>
   <p style="margin-top: 24px; font-size: 12px; color: #888;">

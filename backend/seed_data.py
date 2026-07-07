@@ -1,7 +1,7 @@
 """Seed demo data — 1 000+ seafarers across a realistic global fleet"""
 import random
 from datetime import datetime, timedelta, date
-from app.models import Base, Crew, Certificate, Vessel, CrewAssignment, Alert
+from app.models import Base, Crew, Certificate, Vessel, CrewAssignment, Alert, ComplianceBriefing
 from app.database import engine, SessionLocal
 
 # ── Name pools by nationality ─────────────────────────────────────────────────
@@ -179,22 +179,27 @@ FLAG_STATES = [
 CERT_CONFIGS = {
     "officer": [
         ("STCW Certificate of Competency", ["UK MCA", "MARINA Philippines", "India DG Shipping",
-                                             "Panama Maritime Authority", "Liberian Registry",
-                                             "Bahamas Maritime Authority", "MPA Singapore"]),
+                                            "Panama Maritime Authority", "Liberian Registry",
+                                            "Bahamas Maritime Authority", "MPA Singapore"]),
         ("Medical Certificate (ENG1)", ["Approved Medical Examiner", "Port Health Authority",
-                                         "Class A Medical Center"]),
+                                        "Class A Medical Center"]),
         ("GMDSS General Operator Certificate", ["ITU", "UK MCA", "FCC"]),
-        ("Advanced Fire Fighting", ["STCW Training Center", "Maritime Academy"]),
+        ("Advanced Fire Fighting", [
+         "STCW Training Center", "Maritime Academy"]),
         ("Ship Security Officer Certificate", ["IMO Approved Center"]),
-        ("Bridge Resource Management", ["DNV GL", "Lloyd's Register", "Bureau Veritas"]),
-        ("ECDIS Type-Specific Certificate", ["Furuno", "JRC", "Kongsberg", "Transas"]),
+        ("Bridge Resource Management", [
+         "DNV GL", "Lloyd's Register", "Bureau Veritas"]),
+        ("ECDIS Type-Specific Certificate",
+         ["Furuno", "JRC", "Kongsberg", "Transas"]),
     ],
     "engineer": [
         ("STCW Certificate of Competency – Engineer", ["UK MCA", "India DG Shipping",
-                                                         "MARINA Philippines", "Panama Maritime Authority",
-                                                         "MPA Singapore"]),
-        ("Medical Certificate (ENG1)", ["Approved Medical Examiner", "Port Health Authority"]),
-        ("Advanced Fire Fighting", ["STCW Training Center", "Maritime Academy"]),
+                                                       "MARINA Philippines", "Panama Maritime Authority",
+                                                       "MPA Singapore"]),
+        ("Medical Certificate (ENG1)", [
+         "Approved Medical Examiner", "Port Health Authority"]),
+        ("Advanced Fire Fighting", [
+         "STCW Training Center", "Maritime Academy"]),
         ("High Voltage Certificate", ["DNV GL", "Bureau Veritas"]),
         ("Engine Resource Management", ["DNV GL", "Lloyd's Register"]),
         ("Refrigeration Certificate", ["STCW Training Center"]),
@@ -202,14 +207,16 @@ CERT_CONFIGS = {
     ],
     "rating": [
         ("Basic Safety Training (BST)", ["STCW Training Center", "Maritime Academy",
-                                          "MARINA Philippines", "India DG Shipping"]),
-        ("Medical Certificate (ENG1)", ["Approved Medical Examiner", "Port Health Authority"]),
+                                         "MARINA Philippines", "India DG Shipping"]),
+        ("Medical Certificate (ENG1)", [
+         "Approved Medical Examiner", "Port Health Authority"]),
         ("Proficiency in Survival Craft", ["STCW Training Center"]),
         ("Security Awareness Training", ["IMO Approved Center"]),
         ("Advanced Fire Fighting", ["STCW Training Center"]),
     ],
     "cadet": [
-        ("Basic Safety Training (BST)", ["STCW Training Center", "Maritime Academy"]),
+        ("Basic Safety Training (BST)", [
+         "STCW Training Center", "Maritime Academy"]),
         ("Medical Certificate (ENG1)", ["Approved Medical Examiner"]),
         ("Security Awareness Training", ["IMO Approved Center"]),
     ],
@@ -217,17 +224,21 @@ CERT_CONFIGS = {
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
+
 def weighted_choice(options_dict):
     keys = list(options_dict.keys())
     weights = [options_dict[k]["weight"] for k in keys]
     return random.choices(keys, weights=weights, k=1)[0]
 
+
 def random_name(nationality):
     pool = NATIONALITIES[nationality]
     return f"{random.choice(pool['first'])} {random.choice(pool['last'])}"
 
+
 def random_date_past(min_days=30, max_days=1800):
     return date.today() - timedelta(days=random.randint(min_days, max_days))
+
 
 def cert_expiry(issue: date, cert_type: str) -> date:
     if "Medical" in cert_type:
@@ -237,6 +248,7 @@ def cert_expiry(issue: date, cert_type: str) -> date:
     if "GMDSS" in cert_type:
         return issue + timedelta(days=365 * 5)
     return issue + timedelta(days=random.randint(365 * 3, 365 * 5))
+
 
 def make_cert(crew_id, cert_type, authority, offset_days_ago):
     issue = date.today() - timedelta(days=offset_days_ago)
@@ -253,6 +265,7 @@ def make_cert(crew_id, cert_type, authority, offset_days_ago):
 
 # ── Main seeder ───────────────────────────────────────────────────────────────
 
+
 def seed_demo_data():
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
@@ -261,6 +274,7 @@ def seed_demo_data():
     db.query(Alert).delete()
     db.query(CrewAssignment).delete()
     db.query(Certificate).delete()
+    db.query(ComplianceBriefing).delete()
     db.query(Crew).delete()
     db.query(Vessel).delete()
     db.commit()
@@ -286,7 +300,8 @@ def seed_demo_data():
             imo=str(imo_base + i * 13),
             vessel_type=random.choice(VESSEL_TYPES),
             flag_state=random.choice(FLAG_STATES),
-            status=random.choice(["active", "active", "active", "maintenance"]),
+            status=random.choice(
+                ["active", "active", "active", "maintenance"]),
         )
         vessels.append(v)
     db.add_all(vessels)
@@ -294,7 +309,8 @@ def seed_demo_data():
 
     # ── Crew (1 050 members) ──────────────────────────────────────────────────
     TOTAL_CREW = 1050
-    statuses = ["available"] * 40 + ["onboard"] * 40 + ["on_leave"] * 15 + ["standby"] * 5
+    statuses = ["available"] * 40 + ["onboard"] * \
+        40 + ["on_leave"] * 15 + ["standby"] * 5
     all_crew = []
     used_ids = set()
 
@@ -320,7 +336,7 @@ def seed_demo_data():
             position=position,
             status=status,
             email=email,
-            phone=f"+{random.randint(1,99)}{random.randint(1000000000, 9999999999)}",
+            phone=f"+{random.randint(1, 99)}{random.randint(1000000000, 9999999999)}",
         )
         all_crew.append(c)
 
@@ -330,12 +346,14 @@ def seed_demo_data():
     # ── Certificates ──────────────────────────────────────────────────────────
     all_certs = []
     for c in all_crew:
-        _, pos_type = next((p for p in POSITIONS if p[0] == c.position), (c.position, "rating"))
+        _, pos_type = next(
+            (p for p in POSITIONS if p[0] == c.position), (c.position, "rating"))
         pool = CERT_CONFIGS.get(pos_type, CERT_CONFIGS["rating"])
 
         # Pick 2–4 certs per crew member, weighted: first cert is mandatory
         num_certs = random.choices([2, 3, 4], weights=[25, 50, 25])[0]
-        chosen = [pool[0]] + random.sample(pool[1:], min(num_certs - 1, len(pool) - 1))
+        chosen = [pool[0]] + \
+            random.sample(pool[1:], min(num_certs - 1, len(pool) - 1))
 
         for cert_type, authorities in chosen:
             authority = random.choice(authorities)
@@ -343,7 +361,7 @@ def seed_demo_data():
             offset = random.choices(
                 [random.randint(30, 200),    # expiring soon / just issued
                  random.randint(200, 800),   # mid-life
-                 random.randint(800, 1500)], # getting old
+                 random.randint(800, 1500)],  # getting old
                 weights=[20, 55, 25]
             )[0]
             all_certs.append(make_cert(c.id, cert_type, authority, offset))
@@ -407,17 +425,19 @@ def seed_demo_data():
     db.commit()
 
     available = sum(1 for c in all_crew if c.status == "available")
-    onboard   = sum(1 for c in all_crew if c.status == "onboard")
-    on_leave  = sum(1 for c in all_crew if c.status == "on_leave")
-    standby   = sum(1 for c in all_crew if c.status == "standby")
+    onboard = sum(1 for c in all_crew if c.status == "onboard")
+    on_leave = sum(1 for c in all_crew if c.status == "on_leave")
+    standby = sum(1 for c in all_crew if c.status == "standby")
 
     print("✅ Demo data seeded successfully!")
     print(f"   Vessels    : {len(vessels)}")
-    print(f"   Crew       : {len(all_crew)}  (available {available} | onboard {onboard} | on_leave {on_leave} | standby {standby})")
+    print(
+        f"   Crew       : {len(all_crew)}  (available {available} | onboard {onboard} | on_leave {on_leave} | standby {standby})")
     print(f"   Certificates: {len(all_certs)}")
     print(f"   Assignments : {len(assignments)}")
     print(f"   Alerts      : {len(alerts)}")
     db.close()
+
 
 if __name__ == "__main__":
     seed_demo_data()

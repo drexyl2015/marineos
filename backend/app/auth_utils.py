@@ -58,3 +58,52 @@ def get_optional_user(
         return user if user and user.is_active else None
     except JWTError:
         return None
+
+
+# ---------------------------------------------------------------------------
+# Role-based authorization
+#
+# UI role switching is a convenience, not a security boundary. Privileged
+# actions must be enforced on the API. The role groups below define who may
+# perform write / administrative / paid-AI operations. Read-only roles
+# (seafarer, port_authority) keep authenticated read access but cannot mutate
+# data or trigger paid AI calls.
+# ---------------------------------------------------------------------------
+
+# Full administrative control.
+ADMIN_ROLES = ("super_admin",)
+
+# Roles allowed to create/update/delete operational records and run AI tools.
+MANAGER_ROLES = (
+    "super_admin",
+    "crew_manager",
+    "compliance_officer",
+    "vessel_manager",
+    "fleet_ops",
+    "crew_agency",
+    "master",
+)
+
+
+def require_role(*allowed_roles: str):
+    """Dependency factory: allow only users whose role is in ``allowed_roles``.
+
+    Usage:
+        current_user: models.User = Depends(require_role("super_admin"))
+    """
+    allowed = set(allowed_roles)
+
+    def checker(current_user: models.User = Depends(get_current_user)) -> models.User:
+        if current_user.role not in allowed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to perform this action.",
+            )
+        return current_user
+
+    return checker
+
+
+# Convenience dependencies for the common cases.
+require_super_admin = require_role(*ADMIN_ROLES)
+require_manager = require_role(*MANAGER_ROLES)

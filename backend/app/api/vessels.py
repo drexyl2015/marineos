@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from app.database import get_db
 from app import models, schemas
-from app.auth_utils import get_current_user
+from app.auth_utils import get_current_user, require_manager
 
 router = APIRouter()
 
@@ -30,7 +30,7 @@ async def list_vessels(skip: int = 0, limit: int = 50, db: Session = Depends(get
     return {"total": total, "vessels": result}
 
 @router.post("/", response_model=dict)
-async def create_vessel(vessel: schemas.VesselCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+async def create_vessel(vessel: schemas.VesselCreate, db: Session = Depends(get_db), current_user: models.User = Depends(require_manager)):
     if vessel.imo and db.query(models.Vessel).filter(models.Vessel.imo == vessel.imo).first():
         raise HTTPException(status_code=400, detail="IMO number already exists")
     db_vessel = models.Vessel(**vessel.dict())
@@ -59,7 +59,7 @@ async def get_vessel(vessel_id: int, db: Session = Depends(get_db), current_user
     }
 
 @router.put("/{vessel_id}", response_model=dict)
-async def update_vessel(vessel_id: int, vessel_update: schemas.VesselUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+async def update_vessel(vessel_id: int, vessel_update: schemas.VesselUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(require_manager)):
     vessel = db.query(models.Vessel).filter(models.Vessel.id == vessel_id).first()
     if not vessel:
         raise HTTPException(status_code=404, detail="Vessel not found")
@@ -70,7 +70,7 @@ async def update_vessel(vessel_id: int, vessel_update: schemas.VesselUpdate, db:
     return {"status": "updated", "vessel_id": vessel.id}
 
 @router.delete("/{vessel_id}", response_model=dict)
-async def delete_vessel(vessel_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+async def delete_vessel(vessel_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(require_manager)):
     vessel = db.query(models.Vessel).filter(models.Vessel.id == vessel_id).first()
     if not vessel:
         raise HTTPException(status_code=404, detail="Vessel not found")

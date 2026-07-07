@@ -8,9 +8,7 @@ import PrivacyPolicyPage from './components/PrivacyPolicyPage'
 import CookieBanner from './components/CookieBanner'
 import AIAssistantWidget from './components/AIAssistantWidget'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import axios from 'axios'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+import { api, API_URL } from './lib/api'
 
 type AppView = 'landing' | 'login' | 'dashboard' | 'impressum' | 'privacy'
 export type Theme = 'light' | 'dark'
@@ -34,9 +32,17 @@ function AppInner() {
     checkApiHealth()
   }, [])
 
+  // The free-tier backend sleeps when idle and can take up to a minute to
+  // wake, so keep polling until it responds instead of failing permanently.
+  useEffect(() => {
+    if (apiHealth) return
+    const id = window.setInterval(checkApiHealth, 5000)
+    return () => window.clearInterval(id)
+  }, [apiHealth])
+
   const checkApiHealth = async () => {
     try {
-      const response = await axios.get(`${API_URL}/health`, { timeout: 5000 })
+      const response = await api.get('/health', { timeout: 5000 })
       setApiHealth(response.status === 200)
     } catch {
       setApiHealth(false)
@@ -111,19 +117,18 @@ function AppInner() {
       <>
         <div className="flex items-center justify-center min-h-screen bg-navy-950">
           <div className="bg-navy-900 border border-white/10 rounded-2xl shadow-2xl p-8 max-w-md text-center text-white">
-            <div className="text-4xl mb-4">⚠️</div>
-            <h1 className="text-2xl font-bold mb-2">Connection Error</h1>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sea-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold mb-2">Starting the server…</h1>
             <p className="text-steel-400 mb-4">
-              Cannot connect to backend API at{' '}
-              <code className="bg-navy-800 px-2 py-1 rounded text-sea-400 text-sm">{API_URL}</code>
+              The MarineOS server goes to sleep when idle and is waking up now.
+              This can take up to a minute — the page will connect automatically.
             </p>
             <p className="text-sm text-steel-500 mb-6">
-              Make sure the backend is running:{' '}
-              <code className="bg-navy-800 px-2 py-1 rounded text-xs">uvicorn main:app --reload</code>
+              Backend: <code className="bg-navy-800 px-2 py-1 rounded text-sea-400 text-xs">{API_URL}</code>
             </p>
             <div className="flex gap-3 justify-center">
               <button type="button" onClick={checkApiHealth} className="btn-primary">
-                Retry Connection
+                Retry Now
               </button>
               <button type="button" onClick={() => setView('landing')} className="btn-secondary">
                 Back to Home

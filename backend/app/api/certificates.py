@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 from app.database import get_db
 from app import schemas, models
-from app.auth_utils import get_current_user
+from app.auth_utils import get_current_user, require_manager
 
 router = APIRouter()
 
@@ -51,7 +51,7 @@ async def list_certificates(
 async def create_certificate(
     cert: schemas.CertificateCreate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(require_manager)
 ):
     """Create new certificate"""
     crew = db.query(models.Crew).filter(models.Crew.id == cert.crew_id).first()
@@ -75,7 +75,7 @@ async def update_certificate(
     cert_id: int,
     cert_update: schemas.CertificateUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    current_user: models.User = Depends(require_manager)
 ):
     """Update certificate details"""
     cert = db.query(models.Certificate).filter(models.Certificate.id == cert_id).first()
@@ -89,7 +89,7 @@ async def update_certificate(
     return {"status": "updated", "certificate_id": cert.id}
 
 @router.delete("/{cert_id}", response_model=dict)
-async def delete_certificate(cert_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+async def delete_certificate(cert_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(require_manager)):
     """Delete a certificate"""
     cert = db.query(models.Certificate).filter(models.Certificate.id == cert_id).first()
     if not cert:

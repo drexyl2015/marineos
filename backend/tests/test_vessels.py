@@ -40,7 +40,7 @@ def test_create_vessel_requires_auth(client):
 def test_list_vessels(client, auth_headers):
     _create_vessel(client, auth_headers, "MV Alpha", "IMO0000002")
     _create_vessel(client, auth_headers, "MV Beta", "IMO0000003")
-    res = client.get("/api/vessels/")
+    res = client.get("/api/vessels/", headers=auth_headers)
     assert res.status_code == 200
     data = res.json()
     assert data["total"] == 2
@@ -50,7 +50,7 @@ def test_list_vessels(client, auth_headers):
 def test_list_vessels_pagination(client, auth_headers):
     for i in range(4):
         _create_vessel(client, auth_headers, f"MV Ship{i}", f"IMO100000{i}")
-    res = client.get("/api/vessels/?limit=2")
+    res = client.get("/api/vessels/?limit=2", headers=auth_headers)
     assert res.status_code == 200
     assert len(res.json()["vessels"]) == 2
     assert res.json()["total"] == 4
@@ -58,15 +58,15 @@ def test_list_vessels_pagination(client, auth_headers):
 
 def test_get_vessel(client, auth_headers):
     vessel_id = _create_vessel(client, auth_headers, "MV Pacific", "IMO2222222")
-    res = client.get(f"/api/vessels/{vessel_id}")
+    res = client.get(f"/api/vessels/{vessel_id}", headers=auth_headers)
     assert res.status_code == 200
     data = res.json()
     assert data["name"] == "MV Pacific"
     assert data["imo"] == "IMO2222222"
 
 
-def test_get_vessel_not_found(client):
-    res = client.get("/api/vessels/99999")
+def test_get_vessel_not_found(client, auth_headers):
+    res = client.get("/api/vessels/99999", headers=auth_headers)
     assert res.status_code == 404
 
 
@@ -88,7 +88,7 @@ def test_delete_vessel(client, auth_headers):
     res = client.delete(f"/api/vessels/{vessel_id}", headers=auth_headers)
     assert res.status_code == 200
     assert res.json()["status"] == "deleted"
-    assert client.get(f"/api/vessels/{vessel_id}").status_code == 404
+    assert client.get(f"/api/vessels/{vessel_id}", headers=auth_headers).status_code == 404
 
 
 def test_delete_vessel_requires_auth(client, auth_headers):

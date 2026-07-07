@@ -1,7 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
-import axios from 'axios'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+import { api, setAuthToken } from '../lib/api'
 
 interface AuthUser {
   id: number
@@ -16,7 +14,6 @@ interface AuthContextValue {
   token: string | null
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string, fullName?: string) => Promise<void>
   logout: () => void
 }
 
@@ -27,40 +24,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
 
   useEffect(() => {
+    setAuthToken(token)
     if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      axios.get(`${API_URL}/api/auth/me`)
+      api.get('/api/auth/me')
         .then(res => setUser(res.data))
         .catch(() => {
           localStorage.removeItem('auth_token')
           setToken(null)
           setUser(null)
-          delete axios.defaults.headers.common['Authorization']
+          setAuthToken(null)
         })
-    } else {
-      delete axios.defaults.headers.common['Authorization']
     }
   }, [token])
 
   const login = async (email: string, password: string) => {
-    const res = await axios.post(`${API_URL}/api/auth/login`, { email, password })
+    const res = await api.post('/api/auth/login', { email, password })
     const newToken = res.data.access_token
     localStorage.setItem('auth_token', newToken)
+    setAuthToken(newToken)
     setToken(newToken)
-    axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`
-    const meRes = await axios.get(`${API_URL}/api/auth/me`)
-    setUser(meRes.data)
-  }
-
-  const register = async (email: string, password: string, fullName?: string) => {
-    const res = await axios.post(`${API_URL}/api/auth/register`, {
-      email, password, full_name: fullName || null,
-    })
-    const newToken = res.data.access_token
-    localStorage.setItem('auth_token', newToken)
-    setToken(newToken)
-    axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`
-    const meRes = await axios.get(`${API_URL}/api/auth/me`)
+    const meRes = await api.get('/api/auth/me')
     setUser(meRes.data)
   }
 
@@ -68,11 +51,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('auth_token')
     setToken(null)
     setUser(null)
-    delete axios.defaults.headers.common['Authorization']
+    setAuthToken(null)
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token && !!user, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token && !!user, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

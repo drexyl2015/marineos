@@ -46,7 +46,7 @@ def test_list_by_crew(client, auth_headers):
             "issuing_authority": "MCA UK",
             "ratings": [], "endorsements": [],
         }, headers=auth_headers)
-    res = client.get(f"/api/certificates/?crew_id={crew_id}")
+    res = client.get(f"/api/certificates/?crew_id={crew_id}", headers=auth_headers)
     assert res.status_code == 200
     assert res.json()["total"] == 3
 
@@ -96,7 +96,7 @@ def test_delete_certificate(client, auth_headers):
     res = client.delete(f"/api/certificates/{cert_id}", headers=auth_headers)
     assert res.status_code == 200
     assert res.json()["status"] == "deleted"
-    assert client.get(f"/api/certificates/{cert_id}").status_code == 404
+    assert client.get(f"/api/certificates/{cert_id}", headers=auth_headers).status_code == 404
 
 
 def test_create_certificate_crew_not_found(client, auth_headers):

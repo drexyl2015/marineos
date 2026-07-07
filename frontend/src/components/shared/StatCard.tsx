@@ -1,23 +1,26 @@
-export default function StatCard({ icon, label, value, color }: {
+export type StatCardColor = 'blue' | 'green' | 'orange' | 'purple'
+
+const chipClasses: Record<StatCardColor, string> = {
+  blue: 'bg-blue-100 text-blue-600',
+  green: 'bg-emerald-100 text-emerald-600',
+  orange: 'bg-amber-100 text-amber-600',
+  purple: 'bg-purple-100 text-purple-600',
+}
+
+export default function StatCard({ icon, label, value, color = 'blue' }: {
   icon: React.ReactNode
   label: string
   value: string | number
-  color: string
+  color?: StatCardColor
 }) {
-  const colorClasses: Record<string, string> = {
-    blue: 'bg-blue-50 text-blue-700 border-blue-200',
-    green: 'bg-green-50 text-green-700 border-green-200',
-    orange: 'bg-orange-50 text-orange-700 border-orange-200',
-    purple: 'bg-purple-50 text-purple-700 border-purple-200',
-  }
   return (
-    <div className={`border rounded-lg p-6 ${colorClasses[color] || colorClasses.blue}`}>
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium opacity-75">{label}</p>
-          <p className="text-3xl font-bold mt-2">{value}</p>
+    <div className="card p-5 hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-gray-500 truncate">{label}</p>
+          <p className="text-3xl font-bold text-gray-900 mt-1">{value}</p>
         </div>
-        <div className="opacity-50">{icon}</div>
+        <div className={`p-3 rounded-xl flex-shrink-0 ${chipClasses[color]}`}>{icon}</div>
       </div>
     </div>
   )

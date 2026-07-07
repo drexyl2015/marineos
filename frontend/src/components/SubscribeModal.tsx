@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { X, Ship, CheckCircle } from 'lucide-react'
-import axios from 'axios'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+import { api } from '../lib/api'
 
 interface SubscribeModalProps {
   onClose: () => void
@@ -51,7 +49,7 @@ export default function SubscribeModal({ onClose, onSubmit }: SubscribeModalProp
     setSubmitting(true)
     setError(null)
     try {
-      await axios.post(`${API_URL}/api/subscribe`, form)
+      await api.post('/api/subscribe', form)
     } catch {
       // Treat network/API failure as success — form data captured client-side
     }

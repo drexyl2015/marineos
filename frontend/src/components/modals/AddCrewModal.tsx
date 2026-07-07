@@ -1,10 +1,8 @@
 import { useState } from 'react'
-import axios from 'axios'
 import { AlertCircle, Users } from 'lucide-react'
 import ModalOverlay from '../shared/ModalOverlay'
 import { NATIONALITIES, POSITIONS } from '../../constants/maritime'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+import { api } from '../../lib/api'
 
 export default function AddCrewModal({ onClose, onSuccess }: {
   onClose: () => void
@@ -25,7 +23,7 @@ export default function AddCrewModal({ onClose, onSuccess }: {
     setSubmitting(true)
     setError(null)
     try {
-      await axios.post(`${API_URL}/api/crew/`, {
+      await api.post('/api/crew/', {
         name: form.name.trim(),
         employee_id: form.employee_id.trim() || null,
         nationality: form.nationality,

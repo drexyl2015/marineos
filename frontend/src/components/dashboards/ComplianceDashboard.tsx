@@ -1,11 +1,11 @@
 import { useState } from 'react'
-import axios from 'axios'
 import { AlertCircle, CheckCircle, Ship } from 'lucide-react'
 import StatCard from '../shared/StatCard'
+import { api } from '../../lib/api'
+import { daysUntil } from '../../lib/dates'
+import type { DashboardData } from '../../types'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-
-export default function ComplianceDashboard({ data }: { data: any }) {
+export default function ComplianceDashboard({ data }: { data: DashboardData }) {
   const [portInput, setPortInput] = useState('')
   const [briefingLoading, setBriefingLoading] = useState(false)
   const [briefingResult, setBriefingResult] = useState<string | null>(null)
@@ -15,7 +15,7 @@ export default function ComplianceDashboard({ data }: { data: any }) {
     setBriefingLoading(true)
     setBriefingResult(null)
     try {
-      const res = await axios.post(`${API_URL}/api/ai/generate-briefing`, null, {
+      const res = await api.post('/api/ai/generate-briefing', null, {
         params: { vessel_id: 1, port_name: portInput.trim() }
       })
       const content = res.data?.briefing?.briefing || res.data?.briefing || JSON.stringify(res.data?.briefing)
@@ -35,7 +35,7 @@ export default function ComplianceDashboard({ data }: { data: any }) {
         <StatCard icon={<Ship className="w-6 h-6" />} label="SOLAS Compliance" value="100%" color="green" />
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="card p-6">
         <h2 className="text-lg font-bold mb-2">Compliance Briefing Generator</h2>
         <p className="text-gray-600 mb-4 text-sm">Generate AI-powered port compliance briefings</p>
         <div className="flex gap-3">
@@ -57,18 +57,16 @@ export default function ComplianceDashboard({ data }: { data: any }) {
         )}
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="card p-6">
         <h2 className="text-lg font-bold mb-4">Expiring Certificates (90 days)</h2>
         <div className="space-y-2">
-          {data?.expiringCertsList?.length > 0
-            ? data.expiringCertsList.map((c: any, idx: number) => {
-                const daysLeft = Math.floor(
-                  (new Date(c.expiry_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-                )
+          {data.expiringCertsList.length > 0
+            ? data.expiringCertsList.map(c => {
+                const daysLeft = daysUntil(c.expiry_date)
                 return (
-                  <div key={idx} className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex justify-between items-center">
+                  <div key={c.id} className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex justify-between items-center">
                     <div>
-                      <p className="font-semibold text-sm">{c.certificate_type}</p>
+                      <p className="font-semibold text-sm">{c.type}</p>
                       <p className="text-xs text-gray-600">Expires: {c.expiry_date}</p>
                     </div>
                     <span className={`text-xs font-bold px-2 py-1 rounded-full ${daysLeft <= 30 ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
