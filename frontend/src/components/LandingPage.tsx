@@ -1,13 +1,30 @@
 import { useEffect, useState } from 'react'
 import {
   Ship, FileText, Shield, Users, Anchor, Globe,
-  CheckCircle, ArrowRight, Play, BarChart2,
+  CheckCircle, ArrowRight, BarChart2,
   Zap, Search, AlertTriangle, ChevronDown, Menu, X
 } from 'lucide-react'
 interface LandingPageProps {
   onEnterDashboard: () => void
   onShowImpressum: () => void
   onShowPrivacy: () => void
+}
+
+/** Mouse-tracking 3D tilt. Spread the returned handlers onto any element with
+ *  the `card-3d` class; CSS handles the smooth return on mouse leave. */
+function useTilt(max = 7) {
+  const onMouseMove = (e: React.MouseEvent<HTMLElement>) => {
+    const el = e.currentTarget
+    const r = el.getBoundingClientRect()
+    const px = (e.clientX - r.left) / r.width - 0.5
+    const py = (e.clientY - r.top) / r.height - 0.5
+    el.style.transform =
+      `perspective(1100px) rotateX(${(-py * max).toFixed(2)}deg) rotateY(${(px * max).toFixed(2)}deg) translateY(-4px)`
+  }
+  const onMouseLeave = (e: React.MouseEvent<HTMLElement>) => {
+    e.currentTarget.style.transform = ''
+  }
+  return { onMouseMove, onMouseLeave }
 }
 
 function useReveal() {
@@ -77,7 +94,7 @@ function MarketingNav({ onEnterDashboard }: {
 
           <div className="hidden md:flex items-center gap-3">
             <button type="button" onClick={onEnterDashboard} className="btn-primary py-2 px-4 text-sm">
-              Start Free Month
+              Sign In
             </button>
           </div>
 
@@ -98,7 +115,7 @@ function MarketingNav({ onEnterDashboard }: {
             <a href="#how-it-works" onClick={() => setMobileOpen(false)} className="block px-4 py-3 text-steel-300 hover:text-white text-sm">How It Works</a>
             <a href="#pricing"    onClick={() => setMobileOpen(false)} className="block px-4 py-3 text-steel-300 hover:text-white text-sm">Pricing</a>
             <div className="px-4 pt-3 flex flex-col gap-2">
-              <button type="button" onClick={() => { onEnterDashboard(); setMobileOpen(false) }} className="btn-primary text-sm py-2 justify-center">Start Free Month</button>
+              <button type="button" onClick={() => { onEnterDashboard(); setMobileOpen(false) }} className="btn-primary text-sm py-2 justify-center">Sign In</button>
             </div>
           </div>
         )}
@@ -132,6 +149,12 @@ function HeroSection({ onEnterDashboard }: {
       {/* Subtle bottom vignette */}
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-navy-950 to-transparent" />
 
+      {/* Floating ambient depth orbs */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="float-orb absolute top-1/4 left-[10%] w-72 h-72 rounded-full bg-sea-500/10 blur-3xl" />
+        <div className="float-orb-2 absolute bottom-1/4 right-[8%] w-96 h-96 rounded-full bg-emerald-400/10 blur-3xl" />
+      </div>
+
       {/* Hero content */}
       <div className="relative z-10 text-center max-w-5xl mx-auto px-6 pt-20">
         <div className="inline-flex items-center gap-2 glass-card px-4 py-2 rounded-full text-sm text-sea-400 mb-8 animate-fade-in">
@@ -150,19 +173,18 @@ function HeroSection({ onEnterDashboard }: {
           your entire maritime workforce — powered by Claude AI.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12 animate-fade-in">
-          <button type="button" onClick={onEnterDashboard} className="btn-primary text-base px-8 py-4">
-            <Play className="w-5 h-5" />
-            Start Your Free Month
-          </button>
-          <a href="#pricing" className="btn-secondary text-base px-8 py-4">
-            See Pricing
+        <div className="flex justify-center mb-8 animate-fade-in">
+          <button type="button" onClick={onEnterDashboard} className="btn-primary text-base px-10 py-4">
+            Sign In
             <ArrowRight className="w-5 h-5" />
-          </a>
+          </button>
         </div>
 
-        <p className="text-steel-500 text-xs mt-4 animate-fade-in">
-          One month free · Then $10/month · No credit card to start · Cancel anytime
+        <p className="text-steel-400 text-sm animate-fade-in max-w-lg mx-auto leading-relaxed">
+          Your first month is <span className="text-white font-semibold">free</span>.
+          After 30 days, continued access requires a{' '}
+          <span className="text-white font-semibold">$10/month</span> subscription.
+          No credit card to start · Cancel anytime.
         </p>
       </div>
 
@@ -233,6 +255,7 @@ const features = [
 ]
 
 function FeaturesSection() {
+  const tilt = useTilt(6)
   return (
     <section id="features" className="relative py-28 overflow-hidden">
       {/* Parallax background image */}
@@ -255,21 +278,24 @@ function FeaturesSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 tilt-stage">
           {features.map((f, i) => (
             <div
               key={f.title}
-              className="glass-card-md rounded-2xl p-7 reveal hover:border-sea-500/40
-                         hover:bg-white/[0.09] transition-all duration-300 group"
+              {...tilt}
+              className="glass-card-md rounded-2xl p-7 reveal card-3d hover:border-sea-500/40
+                         hover:bg-white/[0.09] group"
               style={{ transitionDelay: `${i * 80}ms` }}
             >
-              <div className="w-12 h-12 rounded-xl bg-sea-500/15 border border-sea-500/20
-                              flex items-center justify-center text-sea-400 mb-5
-                              group-hover:bg-sea-500/25 transition-colors duration-300">
-                {f.icon}
+              <div className="card-3d-inner">
+                <div className="w-12 h-12 rounded-xl bg-sea-500/15 border border-sea-500/20
+                                flex items-center justify-center text-sea-400 mb-5
+                                group-hover:bg-sea-500/25 transition-colors duration-300">
+                  {f.icon}
+                </div>
+                <h3 className="text-lg font-semibold mb-2">{f.title}</h3>
+                <p className="text-steel-400 text-sm leading-relaxed">{f.description}</p>
               </div>
-              <h3 className="text-lg font-semibold mb-2">{f.title}</h3>
-              <p className="text-steel-400 text-sm leading-relaxed">{f.description}</p>
             </div>
           ))}
         </div>
@@ -309,9 +335,9 @@ function DashboardsShowcase() {
           {dashboards.map((d, i) => (
             <div
               key={d.title}
-              className="glass-card rounded-xl p-6 reveal text-center
+              className="glass-card rounded-xl p-6 reveal text-center lift-3d
                          hover:border-sea-500/35 hover:bg-white/[0.07]
-                         transition-all duration-300 cursor-default"
+                         cursor-default"
               style={{ transitionDelay: `${i * 55}ms` }}
             >
               <div className="text-4xl mb-3">{d.icon}</div>
@@ -365,8 +391,10 @@ function HowItWorksSection() {
               key={step.number}
               className={`flex flex-col md:flex-row items-center gap-10 reveal ${i % 2 === 1 ? 'md:flex-row-reverse' : ''}`}
             >
-              <div className="flex-shrink-0 w-24 h-24 rounded-2xl bg-sea-500/15
-                              border border-sea-500/30 flex items-center justify-center text-sea-400">
+              <div className="flex-shrink-0 w-24 h-24 rounded-2xl bg-sea-500/15 bob-3d
+                              border border-sea-500/30 flex items-center justify-center text-sea-400
+                              shadow-[0_18px_36px_-14px_rgba(16,185,129,0.35)]"
+                   style={{ animationDelay: `${i * 600}ms` }}>
                 {step.icon}
               </div>
               <div className="flex-1 text-center md:text-left">
@@ -414,12 +442,12 @@ function SubscribeCTASection({ onEnterDashboard }: {
         </div>
 
         <div className="reveal">
-          <button type="button" onClick={onEnterDashboard} className="btn-primary text-base px-8 py-4">
-            <Play className="w-5 h-5" />
-            Start Your Free Month
+          <button type="button" onClick={onEnterDashboard} className="btn-primary text-base px-10 py-4">
+            Sign In
+            <ArrowRight className="w-5 h-5" />
           </button>
-          <p className="text-steel-500 text-xs mt-4">
-            One month free · Then $10/month · No credit card to start · Cancel anytime
+          <p className="text-steel-400 text-xs mt-4 max-w-md mx-auto leading-relaxed">
+            First month free, then $10/month · No credit card to start · Cancel anytime
           </p>
         </div>
       </div>
@@ -430,6 +458,7 @@ function SubscribeCTASection({ onEnterDashboard }: {
 // ─── Pricing ──────────────────────────────────────────────────────────────────
 
 function PricingSection({ onEnterDashboard }: { onEnterDashboard: () => void }) {
+  const tilt = useTilt(5)
   const features = [
     'Crew & certificate tracking',
     'Fleet & vessel management',
@@ -447,33 +476,39 @@ function PricingSection({ onEnterDashboard }: { onEnterDashboard: () => void }) 
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">One Simple Price</h2>
           <p className="text-steel-400 text-lg">Everything included. Try it free for a full month.</p>
         </div>
-        <div className="max-w-md mx-auto">
-          <div className="rounded-2xl p-8 flex flex-col bg-sea-600 border-2 border-sea-400 shadow-xl shadow-sea-900/40">
-            <div className="mb-6 text-center">
-              <span className="inline-block bg-white/20 text-white text-xs font-bold uppercase tracking-wide px-3 py-1 rounded-full mb-4">
-                First month free
-              </span>
-              <div className="flex items-baseline gap-1 justify-center">
-                <span className="text-5xl font-extrabold text-white">$10</span>
-                <span className="text-sm text-sea-100">/month after</span>
+        <div className="max-w-md mx-auto tilt-stage">
+          <div {...tilt} className="rounded-2xl p-8 flex flex-col bg-sea-600 border-2 border-sea-400 shadow-xl shadow-sea-900/40 card-3d">
+            <div className="card-3d-inner flex flex-col flex-1">
+              <div className="mb-6 text-center">
+                <span className="inline-block bg-white/20 text-white text-xs font-bold uppercase tracking-wide px-3 py-1 rounded-full mb-4 bob-3d">
+                  First month free
+                </span>
+                <div className="flex items-baseline gap-1 justify-center">
+                  <span className="text-5xl font-extrabold text-white">$10</span>
+                  <span className="text-sm text-sea-100">/month after</span>
+                </div>
+                <p className="text-sm mt-2 text-sea-100">Full platform · Unlimited crew · Cancel anytime</p>
               </div>
-              <p className="text-sm mt-2 text-sea-100">Full platform · Unlimited crew · Cancel anytime</p>
+              <ul className="space-y-3 flex-1 mb-8">
+                {features.map(f => (
+                  <li key={f} className="flex items-start gap-2 text-sm text-sea-50">
+                    <span className="mt-0.5 flex-shrink-0 text-sea-200">✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={onEnterDashboard}
+                className="py-3 rounded-xl font-semibold text-sm transition bg-white text-sea-700 hover:bg-sea-50"
+              >
+                Sign In
+              </button>
+              <p className="text-sea-100/90 text-xs mt-4 text-center leading-relaxed">
+                By signing up you get 30 days free. After that, continued access
+                requires a $10/month subscription. Cancel anytime — no long-term commitment.
+              </p>
             </div>
-            <ul className="space-y-3 flex-1 mb-8">
-              {features.map(f => (
-                <li key={f} className="flex items-start gap-2 text-sm text-sea-50">
-                  <span className="mt-0.5 flex-shrink-0 text-sea-200">✓</span>
-                  {f}
-                </li>
-              ))}
-            </ul>
-            <button
-              type="button"
-              onClick={onEnterDashboard}
-              className="py-3 rounded-xl font-semibold text-sm transition bg-white text-sea-700 hover:bg-sea-50"
-            >
-              Start Your Free Month
-            </button>
           </div>
         </div>
       </div>

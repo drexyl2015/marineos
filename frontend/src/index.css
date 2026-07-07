@@ -124,6 +124,61 @@ code {
   background-clip: text;
 }
 
+/* ── 3D Depth Effects ── */
+
+/* Parent that gives children a 3D stage */
+.tilt-stage {
+  perspective: 1100px;
+}
+
+/* Mouse-tracking tilt card — transform is driven inline by useTilt(); this
+   provides the smooth return and depth shadow. */
+.card-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.35s ease, border-color 0.3s ease;
+  will-change: transform;
+}
+.card-3d:hover {
+  box-shadow:
+    0 26px 50px -16px rgba(0, 0, 0, 0.55),
+    0 0 36px -10px rgba(16, 185, 129, 0.28);
+}
+
+/* Content pushed toward the viewer inside a tilted card */
+.card-3d-inner {
+  transform: translateZ(28px);
+}
+
+/* Simple lift for smaller cards (no mouse tracking) */
+.lift-3d {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease;
+}
+.lift-3d:hover {
+  transform: perspective(800px) translateY(-6px) rotateX(4deg) scale(1.03);
+  box-shadow: 0 18px 36px -14px rgba(0, 0, 0, 0.5), 0 0 24px -8px rgba(16, 185, 129, 0.22);
+}
+
+/* Floating ambient orbs */
+@keyframes float-orb {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(0, -22px, 0) scale(1.06); }
+}
+.float-orb   { animation: float-orb 9s ease-in-out infinite; }
+.float-orb-2 { animation: float-orb 12s ease-in-out infinite reverse; }
+
+/* Gentle bob for icons */
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+.bob-3d { animation: bob 5s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .float-orb, .float-orb-2, .bob-3d { animation: none; }
+  .card-3d, .lift-3d { transition: none; }
+}
+
 /* ── AI Chat Widget ── */
 .chat-panel-enter {
   animation: chatSlideUp 0.25s ease-out forwards;

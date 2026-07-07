@@ -199,6 +199,14 @@ export default function LoginPage({ onEnterDashboard, onBackToHome }: LoginPageP
             className="w-full py-2.5 bg-sea-600 hover:bg-sea-500 disabled:opacity-50 text-white font-semibold rounded-xl transition text-sm">
             {loading ? 'Please wait…' : titles[mode].button}
           </button>
+
+          {mode === 'signup' && (
+            <p className="text-steel-500 text-xs text-center leading-relaxed">
+              By creating an account you get <span className="text-steel-300">one month free</span>.
+              After 30 days, continued access requires a{' '}
+              <span className="text-steel-300">$10/month subscription</span>. Cancel anytime.
+            </p>
+          )}
         </form>
         )}
 
