@@ -44,6 +44,18 @@ def _hash_code(code: str) -> str:
     return hashlib.sha256(code.encode()).hexdigest()
 
 
+def _has_active_access(user: models.User) -> bool:
+    """Free month still running, or a paid subscription — the owner is exempt."""
+    if user.role == "super_admin":
+        return True
+    now = datetime.utcnow()
+    if user.subscribed_until and user.subscribed_until > now:
+        return True
+    if user.trial_expires_at and user.trial_expires_at > now:
+        return True
+    return False
+
+
 def _send_verification_email(user: models.User) -> None:
     verify_url = f"{settings.BACKEND_URL}/api/auth/verify-email?token={user.verification_token}"
     name = html_lib.escape(user.full_name or "there")
@@ -93,6 +105,8 @@ async def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
         full_name=user_in.full_name,
         role="crew_manager",  # public registration always gets the lowest-privilege role
         email_verified=not settings.REQUIRE_EMAIL_VERIFICATION,
+        # Every new account starts with one free month.
+        trial_expires_at=datetime.utcnow() + timedelta(days=settings.TRIAL_DAYS),
     )
     if settings.REQUIRE_EMAIL_VERIFICATION:
         user.verification_token = secrets.token_urlsafe(32)
@@ -157,8 +171,42 @@ async def login(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
             status_code=403,
             detail="Please verify your email first — check your inbox for the verification link.",
         )
+    if not _has_active_access(user):
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail=f"Your free month has ended. Subscribe for {settings.SUBSCRIPTION_PRICE_LABEL} to continue.",
+        )
     token = create_access_token({"sub": str(user.id), "role": user.role})
     return {"access_token": token, "token_type": "bearer"}
+
+
+@router.get("/billing-info", response_model=dict)
+async def billing_info():
+    """Public billing details shown on the subscribe screen."""
+    return {
+        "price": settings.SUBSCRIPTION_PRICE_LABEL,
+        "trial_days": settings.TRIAL_DAYS,
+        "payment_link": settings.STRIPE_PAYMENT_LINK_URL,
+    }
+
+
+@router.post("/activate-subscription/{user_id}", response_model=schemas.UserResponse)
+async def activate_subscription(
+    user_id: int,
+    days: int = 31,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_super_admin),
+):
+    """Owner action after a payment is confirmed: extend paid access by ``days``."""
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    base = user.subscribed_until if user.subscribed_until and user.subscribed_until > datetime.utcnow() else datetime.utcnow()
+    user.subscribed_until = base + timedelta(days=days)
+    user.is_active = True
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 @router.post("/request-login-code", response_model=dict)

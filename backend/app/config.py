@@ -27,6 +27,12 @@ class Settings(BaseSettings):
     ALLOW_PUBLIC_REGISTRATION: bool = True
     REQUIRE_EMAIL_VERIFICATION: bool = True
 
+    # Billing: every account gets one free month, then $10/month via a Stripe
+    # Payment Link. The owner activates paid accounts (activate-subscription).
+    TRIAL_DAYS: int = 30
+    SUBSCRIPTION_PRICE_LABEL: str = "$10/month"
+    STRIPE_PAYMENT_LINK_URL: Optional[str] = None
+
     # Public URLs used in transactional emails and post-verification redirects.
     FRONTEND_URL: str = "https://marineos.app"
     BACKEND_URL: str = "https://marineos.onrender.com"

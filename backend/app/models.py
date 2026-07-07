@@ -108,6 +108,8 @@ class User(Base):
     role = Column(String(50), default="crew_manager")
     is_active = Column(Boolean, default=True)
     trial_expires_at = Column(DateTime, nullable=True)
+    # Paid access after the free month ($10/month); extended on each payment.
+    subscribed_until = Column(DateTime, nullable=True)
     # Email verification: default True so seeded/legacy accounts keep working;
     # public registration explicitly sets False until the link is clicked.
     email_verified = Column(Boolean, default=True)

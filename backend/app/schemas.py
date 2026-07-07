@@ -182,6 +182,7 @@ class UserResponse(BaseModel):
     role: str
     is_active: bool
     trial_expires_at: Optional[datetime] = None
+    subscribed_until: Optional[datetime] = None
 
     class Config:
         from_attributes = True

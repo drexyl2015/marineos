@@ -1,5 +1,6 @@
 """Startup bootstrap tasks: lightweight schema migration and owner access."""
 import logging
+from datetime import datetime, timedelta
 from sqlalchemy import inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
@@ -20,6 +21,7 @@ _USER_COLUMNS = {
     "login_code_hash": "VARCHAR(255)",
     "login_code_expires": "TIMESTAMP",
     "login_code_attempts": "INTEGER DEFAULT 0",
+    "subscribed_until": "TIMESTAMP",
 }
 
 
@@ -30,6 +32,13 @@ def ensure_user_columns(engine: Engine) -> None:
             if name not in existing:
                 conn.execute(text(f"ALTER TABLE users ADD COLUMN {name} {ddl_type}"))
                 logger.info("Added users.%s column", name)
+                if name == "subscribed_until":
+                    # One-time backfill when the billing system first ships:
+                    # accounts created before it get their free month from today.
+                    conn.execute(text(
+                        "UPDATE users SET trial_expires_at = :until WHERE trial_expires_at IS NULL"
+                    ), {"until": datetime.utcnow() + timedelta(days=settings.TRIAL_DAYS)})
+                    logger.info("Backfilled free-month trial for pre-billing accounts")
 
 
 def ensure_owner_user(db: Session) -> None:

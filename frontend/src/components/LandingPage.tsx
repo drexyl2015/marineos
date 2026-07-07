@@ -4,11 +4,8 @@ import {
   CheckCircle, ArrowRight, Play, BarChart2,
   Zap, Search, AlertTriangle, ChevronDown, Menu, X
 } from 'lucide-react'
-import SubscribeModal from './SubscribeModal'
-
 interface LandingPageProps {
   onEnterDashboard: () => void
-  onSubscribe: (email: string) => void
   onShowImpressum: () => void
   onShowPrivacy: () => void
 }
@@ -30,49 +27,28 @@ function useReveal() {
   }, [])
 }
 
-export default function LandingPage({ onEnterDashboard, onSubscribe, onShowImpressum, onShowPrivacy }: LandingPageProps) {
-  const [showSubscribeModal, setShowSubscribeModal] = useState(false)
+export default function LandingPage({ onEnterDashboard, onShowImpressum, onShowPrivacy }: LandingPageProps) {
   useReveal()
 
   return (
     <div className="min-h-screen bg-navy-950 text-white overflow-x-hidden">
-      <MarketingNav
-        onEnterDashboard={onEnterDashboard}
-        onOpenSubscribe={() => setShowSubscribeModal(true)}
-      />
-      <HeroSection
-        onEnterDashboard={onEnterDashboard}
-        onOpenSubscribe={() => setShowSubscribeModal(true)}
-      />
+      <MarketingNav onEnterDashboard={onEnterDashboard} />
+      <HeroSection onEnterDashboard={onEnterDashboard} />
       <StatsBar />
       <FeaturesSection />
       <DashboardsShowcase />
       <HowItWorksSection />
-      <PricingSection onOpenSubscribe={() => setShowSubscribeModal(true)} />
-      <SubscribeCTASection
-        onEnterDashboard={onEnterDashboard}
-        onOpenSubscribe={() => setShowSubscribeModal(true)}
-      />
+      <PricingSection onEnterDashboard={onEnterDashboard} />
+      <SubscribeCTASection onEnterDashboard={onEnterDashboard} />
       <FooterSection onShowPrivacy={onShowPrivacy} onShowImpressum={onShowImpressum} />
-
-      {showSubscribeModal && (
-        <SubscribeModal
-          onClose={() => setShowSubscribeModal(false)}
-          onSubmit={(email) => {
-            onSubscribe(email)
-            setShowSubscribeModal(false)
-          }}
-        />
-      )}
     </div>
   )
 }
 
 // ─── Marketing Nav ────────────────────────────────────────────────────────────
 
-function MarketingNav({ onEnterDashboard, onOpenSubscribe }: {
+function MarketingNav({ onEnterDashboard }: {
   onEnterDashboard: () => void
-  onOpenSubscribe: () => void
 }) {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -96,15 +72,12 @@ function MarketingNav({ onEnterDashboard, onOpenSubscribe }: {
             <a href="#features"   className="text-steel-300 hover:text-white text-sm transition-colors duration-200">Features</a>
             <a href="#dashboards" className="text-steel-300 hover:text-white text-sm transition-colors duration-200">Dashboards</a>
             <a href="#how-it-works" className="text-steel-300 hover:text-white text-sm transition-colors duration-200">How It Works</a>
-            <a href="#subscribe"  className="text-steel-300 hover:text-white text-sm transition-colors duration-200">Pricing</a>
+            <a href="#pricing"  className="text-steel-300 hover:text-white text-sm transition-colors duration-200">Pricing</a>
           </div>
 
           <div className="hidden md:flex items-center gap-3">
-            <button type="button" onClick={onEnterDashboard} className="btn-secondary py-2 px-4 text-sm">
-              Try Demo
-            </button>
-            <button type="button" onClick={onOpenSubscribe} className="btn-primary py-2 px-4 text-sm">
-              Get Access
+            <button type="button" onClick={onEnterDashboard} className="btn-primary py-2 px-4 text-sm">
+              Start Free Month
             </button>
           </div>
 
@@ -123,10 +96,9 @@ function MarketingNav({ onEnterDashboard, onOpenSubscribe }: {
             <a href="#features"     onClick={() => setMobileOpen(false)} className="block px-4 py-3 text-steel-300 hover:text-white text-sm">Features</a>
             <a href="#dashboards"   onClick={() => setMobileOpen(false)} className="block px-4 py-3 text-steel-300 hover:text-white text-sm">Dashboards</a>
             <a href="#how-it-works" onClick={() => setMobileOpen(false)} className="block px-4 py-3 text-steel-300 hover:text-white text-sm">How It Works</a>
-            <a href="#subscribe"    onClick={() => setMobileOpen(false)} className="block px-4 py-3 text-steel-300 hover:text-white text-sm">Pricing</a>
+            <a href="#pricing"    onClick={() => setMobileOpen(false)} className="block px-4 py-3 text-steel-300 hover:text-white text-sm">Pricing</a>
             <div className="px-4 pt-3 flex flex-col gap-2">
-              <button type="button" onClick={() => { onEnterDashboard(); setMobileOpen(false) }} className="btn-secondary text-sm py-2 justify-center">Try Demo</button>
-              <button type="button" onClick={() => { onOpenSubscribe(); setMobileOpen(false) }} className="btn-primary text-sm py-2 justify-center">Get Access</button>
+              <button type="button" onClick={() => { onEnterDashboard(); setMobileOpen(false) }} className="btn-primary text-sm py-2 justify-center">Start Free Month</button>
             </div>
           </div>
         )}
@@ -137,12 +109,9 @@ function MarketingNav({ onEnterDashboard, onOpenSubscribe }: {
 
 // ─── Hero Section ─────────────────────────────────────────────────────────────
 
-function HeroSection({ onEnterDashboard, onOpenSubscribe }: {
+function HeroSection({ onEnterDashboard }: {
   onEnterDashboard: () => void
-  onOpenSubscribe: () => void
 }) {
-  const [email, setEmail] = useState('')
-
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Video background — browser shows poster if video file is absent */}
@@ -184,34 +153,16 @@ function HeroSection({ onEnterDashboard, onOpenSubscribe }: {
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12 animate-fade-in">
           <button type="button" onClick={onEnterDashboard} className="btn-primary text-base px-8 py-4">
             <Play className="w-5 h-5" />
-            Try Demo — Free
+            Start Your Free Month
           </button>
-          <button type="button" onClick={onOpenSubscribe} className="btn-secondary text-base px-8 py-4">
-            Get Full Access
+          <a href="#pricing" className="btn-secondary text-base px-8 py-4">
+            See Pricing
             <ArrowRight className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto animate-fade-in">
-          <label htmlFor="hero-email" className="sr-only">Work email</label>
-          <input
-            id="hero-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && onOpenSubscribe()}
-            placeholder="Enter your work email"
-            className="flex-1 px-4 py-3 rounded-lg bg-white/10 border border-white/20
-                       text-white placeholder-steel-400 focus:outline-none
-                       focus:ring-2 focus:ring-sea-500"
-          />
-          <button type="button" onClick={onOpenSubscribe} className="btn-primary whitespace-nowrap">
-            Start Free Trial
-          </button>
+          </a>
         </div>
 
         <p className="text-steel-500 text-xs mt-4 animate-fade-in">
-          No credit card required · Instant demo access · Cancel anytime
+          One month free · Then $10/month · No credit card to start · Cancel anytime
         </p>
       </div>
 
@@ -433,12 +384,9 @@ function HowItWorksSection() {
 
 // ─── Subscribe CTA Section ────────────────────────────────────────────────────
 
-function SubscribeCTASection({ onEnterDashboard, onOpenSubscribe }: {
+function SubscribeCTASection({ onEnterDashboard }: {
   onEnterDashboard: () => void
-  onOpenSubscribe: () => void
 }) {
-  const [email, setEmail] = useState('')
-
   return (
     <section id="subscribe" className="py-28 bg-navy-800 relative overflow-hidden">
       {/* Teal ambient glow */}
@@ -465,32 +413,13 @@ function SubscribeCTASection({ onEnterDashboard, onOpenSubscribe }: {
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto mb-6 reveal">
-          <label htmlFor="cta-email" className="sr-only">Work email</label>
-          <input
-            id="cta-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && onOpenSubscribe()}
-            placeholder="your@company.com"
-            className="flex-1 px-4 py-3 rounded-lg bg-white/10 border border-white/20
-                       text-white placeholder-steel-400 focus:outline-none
-                       focus:ring-2 focus:ring-sea-500"
-          />
-          <button type="button" onClick={onOpenSubscribe} className="btn-primary whitespace-nowrap">
-            Subscribe
-          </button>
-        </div>
-
         <div className="reveal">
-          <p className="text-steel-500 text-sm mb-5">— or try without signing up —</p>
-          <button type="button" onClick={onEnterDashboard} className="btn-secondary">
-            <Play className="w-4 h-4" />
-            Explore Live Demo
+          <button type="button" onClick={onEnterDashboard} className="btn-primary text-base px-8 py-4">
+            <Play className="w-5 h-5" />
+            Start Your Free Month
           </button>
           <p className="text-steel-500 text-xs mt-4">
-            No credit card required · Instant access · No installation
+            One month free · Then $10/month · No credit card to start · Cancel anytime
           </p>
         </div>
       </div>
@@ -500,96 +429,52 @@ function SubscribeCTASection({ onEnterDashboard, onOpenSubscribe }: {
 
 // ─── Pricing ──────────────────────────────────────────────────────────────────
 
-function PricingSection({ onOpenSubscribe }: { onOpenSubscribe: () => void }) {
-  const tiers = [
-    {
-      name: 'Starter',
-      price: '$49',
-      period: '/mo',
-      limit: 'Up to 25 crew',
-      features: ['Crew & certificate tracking', 'AI document scanning', 'Expiry alerts', 'AI assistant chat'],
-      cta: 'Get Started',
-      highlighted: false,
-    },
-    {
-      name: 'Professional',
-      price: '$149',
-      period: '/mo',
-      limit: 'Up to 100 crew',
-      features: ['Everything in Starter', 'Fleet & vessel management', 'Port compliance briefings', 'Multi-role access', 'Priority email support'],
-      cta: 'Get Started',
-      highlighted: true,
-    },
-    {
-      name: 'Enterprise',
-      price: 'Custom',
-      period: '',
-      limit: 'Unlimited crew',
-      features: ['Everything in Professional', 'API access', 'Custom integrations', 'Dedicated account manager', 'SLA guarantee'],
-      cta: 'Contact Sales',
-      highlighted: false,
-    },
+function PricingSection({ onEnterDashboard }: { onEnterDashboard: () => void }) {
+  const features = [
+    'Crew & certificate tracking',
+    'Fleet & vessel management',
+    'AI document scanning',
+    'Port compliance briefings',
+    'Expiry alerts',
+    'AI assistant chat',
+    'All 9 role dashboards',
   ]
 
   return (
     <section id="pricing" className="py-28 bg-navy-950">
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-14">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Simple, Transparent Pricing</h2>
-          <p className="text-steel-400 text-lg">Scale from a single vessel to a global fleet</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">One Simple Price</h2>
+          <p className="text-steel-400 text-lg">Everything included. Try it free for a full month.</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {tiers.map(tier => (
-            <div
-              key={tier.name}
-              className={`rounded-2xl p-8 flex flex-col ${
-                tier.highlighted
-                  ? 'bg-sea-600 border-2 border-sea-400 shadow-xl shadow-sea-900/40'
-                  : 'bg-navy-900 border border-white/10'
-              }`}
-            >
-              <div className="mb-6">
-                <h3 className={`text-lg font-bold mb-1 ${tier.highlighted ? 'text-white' : 'text-steel-200'}`}>{tier.name}</h3>
-                <div className="flex items-baseline gap-1">
-                  <span className={`text-4xl font-extrabold ${tier.highlighted ? 'text-white' : 'text-white'}`}>{tier.price}</span>
-                  {tier.period && <span className={`text-sm ${tier.highlighted ? 'text-sea-100' : 'text-steel-400'}`}>{tier.period}</span>}
-                </div>
-                <p className={`text-sm mt-1 ${tier.highlighted ? 'text-sea-100' : 'text-steel-500'}`}>{tier.limit}</p>
+        <div className="max-w-md mx-auto">
+          <div className="rounded-2xl p-8 flex flex-col bg-sea-600 border-2 border-sea-400 shadow-xl shadow-sea-900/40">
+            <div className="mb-6 text-center">
+              <span className="inline-block bg-white/20 text-white text-xs font-bold uppercase tracking-wide px-3 py-1 rounded-full mb-4">
+                First month free
+              </span>
+              <div className="flex items-baseline gap-1 justify-center">
+                <span className="text-5xl font-extrabold text-white">$10</span>
+                <span className="text-sm text-sea-100">/month after</span>
               </div>
-              <ul className="space-y-3 flex-1 mb-8">
-                {tier.features.map(f => (
-                  <li key={f} className={`flex items-start gap-2 text-sm ${tier.highlighted ? 'text-sea-50' : 'text-steel-300'}`}>
-                    <span className={`mt-0.5 flex-shrink-0 ${tier.highlighted ? 'text-sea-200' : 'text-sea-400'}`}>✓</span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              {tier.name === 'Enterprise' ? (
-                <a
-                  href="mailto:daresadiq2008@yahoo.com"
-                  className={`text-center py-3 rounded-xl font-semibold text-sm transition border ${
-                    tier.highlighted
-                      ? 'bg-white text-sea-700 hover:bg-sea-50 border-white'
-                      : 'border-sea-500 text-sea-400 hover:bg-sea-900'
-                  }`}
-                >
-                  {tier.cta}
-                </a>
-              ) : (
-                <button
-                  type="button"
-                  onClick={onOpenSubscribe}
-                  className={`py-3 rounded-xl font-semibold text-sm transition ${
-                    tier.highlighted
-                      ? 'bg-white text-sea-700 hover:bg-sea-50'
-                      : 'bg-sea-600 text-white hover:bg-sea-500'
-                  }`}
-                >
-                  {tier.cta}
-                </button>
-              )}
+              <p className="text-sm mt-2 text-sea-100">Full platform · Unlimited crew · Cancel anytime</p>
             </div>
-          ))}
+            <ul className="space-y-3 flex-1 mb-8">
+              {features.map(f => (
+                <li key={f} className="flex items-start gap-2 text-sm text-sea-50">
+                  <span className="mt-0.5 flex-shrink-0 text-sea-200">✓</span>
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={onEnterDashboard}
+              className="py-3 rounded-xl font-semibold text-sm transition bg-white text-sea-700 hover:bg-sea-50"
+            >
+              Start Your Free Month
+            </button>
+          </div>
         </div>
       </div>
     </section>

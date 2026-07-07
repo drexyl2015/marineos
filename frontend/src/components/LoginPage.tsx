@@ -8,7 +8,7 @@ interface LoginPageProps {
   onBackToHome: () => void
 }
 
-type Mode = 'signin' | 'signup' | 'code-request' | 'code-entry'
+type Mode = 'signin' | 'signup' | 'code-request' | 'code-entry' | 'subscribe'
 
 export default function LoginPage({ onEnterDashboard, onBackToHome }: LoginPageProps) {
   const { login, register, loginWithCode } = useAuth()
@@ -21,6 +21,7 @@ export default function LoginPage({ onEnterDashboard, onBackToHome }: LoginPageP
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
+  const [paymentLink, setPaymentLink] = useState<string | null>(null)
 
   // Result of clicking the email verification link (?verified=1 / ?verified=0)
   useEffect(() => {
@@ -69,7 +70,17 @@ export default function LoginPage({ onEnterDashboard, onBackToHome }: LoginPageP
         onEnterDashboard()
       }
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Something went wrong. Please try again.')
+      if (err.response?.status === 402) {
+        // Free month over — show the subscribe screen.
+        setMode('subscribe')
+        setError(null)
+        setInfo(null)
+        api.get('/api/auth/billing-info')
+          .then(res => setPaymentLink(res.data.payment_link))
+          .catch(() => setPaymentLink(null))
+      } else {
+        setError(err.response?.data?.detail || 'Something went wrong. Please try again.')
+      }
     } finally {
       setLoading(false)
     }
@@ -83,6 +94,7 @@ export default function LoginPage({ onEnterDashboard, onBackToHome }: LoginPageP
     signup: { heading: 'Create your free account', button: 'Create Account' },
     'code-request': { heading: 'Sign in with an email code', button: 'Send Code' },
     'code-entry': { heading: 'Enter your sign-in code', button: 'Verify & Sign In' },
+    subscribe: { heading: 'Your free month has ended', button: '' },
   }
 
   return (
@@ -100,6 +112,34 @@ export default function LoginPage({ onEnterDashboard, onBackToHome }: LoginPageP
 
         <h1 className="text-white font-semibold text-center mb-6">{titles[mode].heading}</h1>
 
+        {mode === 'subscribe' ? (
+          <div className="space-y-5 text-center">
+            <p className="text-steel-300 text-sm leading-relaxed">
+              Thanks for trying MarineOS! To keep using the full platform, subscribe
+              for <span className="text-white font-semibold">$10/month</span>. Cancel anytime.
+            </p>
+            {paymentLink ? (
+              <>
+                <a href={paymentLink} target="_blank" rel="noopener noreferrer"
+                  className="block w-full py-3 bg-sea-600 hover:bg-sea-500 text-white font-semibold rounded-xl transition text-sm">
+                  Subscribe — $10/month
+                </a>
+                <p className="text-steel-500 text-xs leading-relaxed">
+                  Use the same email you signed up with. Your account is activated shortly
+                  after payment (within 24 hours at most).
+                </p>
+              </>
+            ) : (
+              <p className="text-steel-400 text-sm leading-relaxed">
+                Online payment is being set up. To subscribe now, email{' '}
+                <a href="mailto:daresadiq2008@yahoo.com" className="text-sea-400 hover:text-sea-300">
+                  daresadiq2008@yahoo.com
+                </a>{' '}
+                and your account will be activated.
+              </p>
+            )}
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === 'signup' && (
             <div>
@@ -160,6 +200,7 @@ export default function LoginPage({ onEnterDashboard, onBackToHome }: LoginPageP
             {loading ? 'Please wait…' : titles[mode].button}
           </button>
         </form>
+        )}
 
         <div className="mt-6 space-y-2 text-center text-sm">
           {mode === 'signin' && (
@@ -183,6 +224,13 @@ export default function LoginPage({ onEnterDashboard, onBackToHome }: LoginPageP
               Already have an account?{' '}
               <button type="button" onClick={() => switchMode('signin')}
                 className="text-sea-400 hover:text-sea-300 font-semibold">Sign in</button>
+            </p>
+          )}
+          {mode === 'subscribe' && (
+            <p className="text-steel-400">
+              Already paid?{' '}
+              <button type="button" onClick={() => switchMode('signin')}
+                className="text-sea-400 hover:text-sea-300 font-semibold">Sign in again</button>
             </p>
           )}
           {(mode === 'code-request' || mode === 'code-entry') && (

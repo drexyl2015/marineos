@@ -70,10 +70,6 @@ function AppInner() {
     window.scrollTo({ top: 0, behavior: 'instant' })
   }
 
-  const handleSubscribe = (email: string) => {
-    console.info('Subscription initiated for:', email)
-  }
-
   const handleLogout = () => {
     logout()
     setView('landing')
@@ -103,7 +99,6 @@ function AppInner() {
       <>
         <LandingPage
           onEnterDashboard={handleEnterDashboard}
-          onSubscribe={handleSubscribe}
           onShowImpressum={() => setView('impressum')}
           onShowPrivacy={() => setView('privacy')}
         />

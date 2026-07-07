@@ -65,6 +65,7 @@ def low_priv_headers(client, db):
     Public registration always assigns the crew_manager role, so a read-only
     role has to be seeded straight into the database.
     """
+    from datetime import datetime, timedelta
     from app.auth_utils import hash_password
     user = models.User(
         email="seafarer@example.com",
@@ -72,6 +73,8 @@ def low_priv_headers(client, db):
         full_name="Sea Farer",
         role="seafarer",
         is_active=True,
+        email_verified=True,
+        trial_expires_at=datetime.utcnow() + timedelta(days=30),
     )
     db.add(user)
     db.commit()
