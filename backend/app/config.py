@@ -22,7 +22,14 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    ALLOW_PUBLIC_REGISTRATION: bool = False
+    # MarineOS is free and self-service: anyone may sign up, gated by email
+    # verification rather than owner approval.
+    ALLOW_PUBLIC_REGISTRATION: bool = True
+    REQUIRE_EMAIL_VERIFICATION: bool = True
+
+    # Public URLs used in transactional emails and post-verification redirects.
+    FRONTEND_URL: str = "https://marineos.app"
+    BACKEND_URL: str = "https://marineos.onrender.com"
 
     # Owner account bootstrap. Set these in the deployment environment to create
     # or keep one private super-admin account available.

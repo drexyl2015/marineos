@@ -14,6 +14,9 @@ interface AuthContextValue {
   token: string | null
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
+  /** Returns true when a verification email was sent (user must verify before login). */
+  register: (email: string, password: string, fullName: string) => Promise<boolean>
+  loginWithCode: (email: string, code: string) => Promise<void>
   logout: () => void
 }
 
@@ -37,14 +40,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [token])
 
-  const login = async (email: string, password: string) => {
-    const res = await api.post('/api/auth/login', { email, password })
-    const newToken = res.data.access_token
+  const adoptToken = async (newToken: string) => {
     localStorage.setItem('auth_token', newToken)
     setAuthToken(newToken)
     setToken(newToken)
     const meRes = await api.get('/api/auth/me')
     setUser(meRes.data)
+  }
+
+  const login = async (email: string, password: string) => {
+    const res = await api.post('/api/auth/login', { email, password })
+    await adoptToken(res.data.access_token)
+  }
+
+  const register = async (email: string, password: string, fullName: string) => {
+    const res = await api.post('/api/auth/register', {
+      email,
+      password,
+      full_name: fullName,
+    })
+    if (res.data.access_token) {
+      await adoptToken(res.data.access_token)
+      return false
+    }
+    return true // verification email sent; user must verify before logging in
+  }
+
+  const loginWithCode = async (email: string, code: string) => {
+    const res = await api.post('/api/auth/login-with-code', { email, code })
+    await adoptToken(res.data.access_token)
   }
 
   const logout = () => {
@@ -55,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token && !!user, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token && !!user, login, register, loginWithCode, logout }}>
       {children}
     </AuthContext.Provider>
   )

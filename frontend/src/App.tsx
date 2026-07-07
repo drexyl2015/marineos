@@ -15,7 +15,10 @@ export type Theme = 'light' | 'dark'
 
 function AppInner() {
   const { isAuthenticated, logout } = useAuth()
-  const [view, setView] = useState<AppView>('landing')
+  // Arriving from an email verification link (?verified=1/0) goes straight to sign-in.
+  const [view, setView] = useState<AppView>(() =>
+    new URLSearchParams(window.location.search).has('verified') ? 'login' : 'landing'
+  )
   const [selectedRole, setSelectedRole] = useState<string>('super_admin')
   const [apiHealth, setApiHealth] = useState<boolean>(false)
   const [loading, setLoading] = useState(true)

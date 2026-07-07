@@ -1,11 +1,35 @@
-"""Startup bootstrap tasks for owner access."""
+"""Startup bootstrap tasks: lightweight schema migration and owner access."""
 import logging
+from sqlalchemy import inspect, text
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 from app import models
 from app.auth_utils import hash_password
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+
+# Columns added after the original users table shipped. create_all() only
+# creates missing tables, never missing columns, so existing deployments need
+# these ALTERs at startup. DEFAULT TRUE on email_verified grandfathers in all
+# pre-existing accounts; new registrations set False explicitly.
+_USER_COLUMNS = {
+    "email_verified": "BOOLEAN DEFAULT TRUE",
+    "verification_token": "VARCHAR(255)",
+    "verification_token_expires": "TIMESTAMP",
+    "login_code_hash": "VARCHAR(255)",
+    "login_code_expires": "TIMESTAMP",
+    "login_code_attempts": "INTEGER DEFAULT 0",
+}
+
+
+def ensure_user_columns(engine: Engine) -> None:
+    existing = {col["name"] for col in inspect(engine).get_columns("users")}
+    with engine.begin() as conn:
+        for name, ddl_type in _USER_COLUMNS.items():
+            if name not in existing:
+                conn.execute(text(f"ALTER TABLE users ADD COLUMN {name} {ddl_type}"))
+                logger.info("Added users.%s column", name)
 
 
 def ensure_owner_user(db: Session) -> None:
@@ -29,6 +53,9 @@ def ensure_owner_user(db: Session) -> None:
         if not owner.is_active:
             owner.is_active = True
             changed = True
+        if not owner.email_verified:
+            owner.email_verified = True
+            changed = True
         if settings.OWNER_FULL_NAME and owner.full_name != settings.OWNER_FULL_NAME:
             owner.full_name = settings.OWNER_FULL_NAME
             changed = True
@@ -46,6 +73,7 @@ def ensure_owner_user(db: Session) -> None:
         full_name=settings.OWNER_FULL_NAME,
         role=settings.OWNER_ROLE,
         is_active=True,
+        email_verified=True,
     )
     db.add(owner)
     db.commit()

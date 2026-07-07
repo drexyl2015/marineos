@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 import logging
 from app.database import Base, SessionLocal, engine
 from app.config import settings
-from app.bootstrap import ensure_owner_user
+from app.bootstrap import ensure_owner_user, ensure_user_columns
 
 # Configure logging
 logging.basicConfig(level=settings.LOG_LEVEL)
@@ -20,6 +20,7 @@ async def lifespan(app: FastAPI):
     # Startup: Create tables
     Base.metadata.create_all(bind=engine)
     logger.info("Database tables created successfully")
+    ensure_user_columns(engine)
     db = SessionLocal()
     try:
         ensure_owner_user(db)

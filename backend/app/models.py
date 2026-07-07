@@ -108,6 +108,15 @@ class User(Base):
     role = Column(String(50), default="crew_manager")
     is_active = Column(Boolean, default=True)
     trial_expires_at = Column(DateTime, nullable=True)
+    # Email verification: default True so seeded/legacy accounts keep working;
+    # public registration explicitly sets False until the link is clicked.
+    email_verified = Column(Boolean, default=True)
+    verification_token = Column(String(255), nullable=True, index=True)
+    verification_token_expires = Column(DateTime, nullable=True)
+    # One-time sign-in code for "forgot password" (hash only, short-lived)
+    login_code_hash = Column(String(255), nullable=True)
+    login_code_expires = Column(DateTime, nullable=True)
+    login_code_attempts = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class ComplianceBriefing(Base):

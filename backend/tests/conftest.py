@@ -21,6 +21,9 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 @pytest.fixture(scope="function", autouse=True)
 def setup_db():
     settings.ALLOW_PUBLIC_REGISTRATION = True
+    # Most fixtures register-then-login in one step; verification-specific
+    # tests flip this on themselves.
+    settings.REQUIRE_EMAIL_VERIFICATION = False
     settings.OWNER_EMAIL = None
     settings.OWNER_PASSWORD = None
     settings.OWNER_UPDATE_PASSWORD_ON_STARTUP = False
