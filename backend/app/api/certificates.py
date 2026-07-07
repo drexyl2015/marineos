@@ -58,7 +58,7 @@ async def create_certificate(
     if not crew:
         raise HTTPException(status_code=404, detail="Crew not found")
 
-    db_cert = models.Certificate(**cert.dict())
+    db_cert = models.Certificate(**cert.model_dump())
     db.add(db_cert)
     db.commit()
     db.refresh(db_cert)
@@ -81,7 +81,7 @@ async def update_certificate(
     cert = db.query(models.Certificate).filter(models.Certificate.id == cert_id).first()
     if not cert:
         raise HTTPException(status_code=404, detail="Certificate not found")
-    update_data = cert_update.dict(exclude_unset=True)
+    update_data = cert_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(cert, field, value)
     db.commit()

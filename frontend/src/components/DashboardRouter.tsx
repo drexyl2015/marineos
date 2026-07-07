@@ -1,14 +1,17 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, Suspense, lazy } from 'react'
 import { AlertCircle } from 'lucide-react'
-import SuperAdminDashboard from './dashboards/SuperAdminDashboard'
-import CrewManagerDashboard from './dashboards/CrewManagerDashboard'
-import ComplianceDashboard from './dashboards/ComplianceDashboard'
-import MasterDashboard from './dashboards/MasterDashboard'
-import SeafarerDashboard from './dashboards/SeafarerDashboard'
-import FleetOpsDashboard from './dashboards/FleetOpsDashboard'
-import PortAuthorityDashboard from './dashboards/PortAuthorityDashboard'
-import CrewAgencyDashboard from './dashboards/CrewAgencyDashboard'
-import VesselDashboard from './dashboards/VesselDashboard'
+
+// Dashboards are lazy-loaded so the initial bundle doesn't ship all nine of
+// them (plus recharts) to visitors who never leave the landing page.
+const SuperAdminDashboard = lazy(() => import('./dashboards/SuperAdminDashboard'))
+const CrewManagerDashboard = lazy(() => import('./dashboards/CrewManagerDashboard'))
+const ComplianceDashboard = lazy(() => import('./dashboards/ComplianceDashboard'))
+const MasterDashboard = lazy(() => import('./dashboards/MasterDashboard'))
+const SeafarerDashboard = lazy(() => import('./dashboards/SeafarerDashboard'))
+const FleetOpsDashboard = lazy(() => import('./dashboards/FleetOpsDashboard'))
+const PortAuthorityDashboard = lazy(() => import('./dashboards/PortAuthorityDashboard'))
+const CrewAgencyDashboard = lazy(() => import('./dashboards/CrewAgencyDashboard'))
+const VesselDashboard = lazy(() => import('./dashboards/VesselDashboard'))
 import { api } from '../lib/api'
 import { daysUntil } from '../lib/dates'
 import type { Certificate, Crew, DashboardData } from '../types'
@@ -87,15 +90,28 @@ export default function DashboardRouter({ selectedRole }: DashboardRouterProps) 
     )
   }
 
-  if (selectedRole === 'super_admin')        return <SuperAdminDashboard data={dashboardData} onRefresh={loadDashboardData} />
-  if (selectedRole === 'crew_manager')       return <CrewManagerDashboard data={dashboardData} onRefresh={loadDashboardData} />
-  if (selectedRole === 'compliance_officer') return <ComplianceDashboard data={dashboardData} />
-  if (selectedRole === 'master')             return <MasterDashboard data={dashboardData} />
-  if (selectedRole === 'seafarer')           return <SeafarerDashboard data={dashboardData} />
-  if (selectedRole === 'fleet_ops')          return <FleetOpsDashboard data={dashboardData} />
-  if (selectedRole === 'port_authority')     return <PortAuthorityDashboard data={dashboardData} />
-  if (selectedRole === 'crew_agency')        return <CrewAgencyDashboard data={dashboardData} />
-  if (selectedRole === 'vessel_manager')     return <VesselDashboard crewList={dashboardData.crew} />
+  const renderDashboard = () => {
+    if (selectedRole === 'super_admin')        return <SuperAdminDashboard data={dashboardData} onRefresh={loadDashboardData} />
+    if (selectedRole === 'crew_manager')       return <CrewManagerDashboard data={dashboardData} onRefresh={loadDashboardData} />
+    if (selectedRole === 'compliance_officer') return <ComplianceDashboard data={dashboardData} />
+    if (selectedRole === 'master')             return <MasterDashboard data={dashboardData} />
+    if (selectedRole === 'seafarer')           return <SeafarerDashboard data={dashboardData} />
+    if (selectedRole === 'fleet_ops')          return <FleetOpsDashboard data={dashboardData} />
+    if (selectedRole === 'port_authority')     return <PortAuthorityDashboard data={dashboardData} />
+    if (selectedRole === 'crew_agency')        return <CrewAgencyDashboard data={dashboardData} />
+    if (selectedRole === 'vessel_manager')     return <VesselDashboard crewList={dashboardData.crew} />
+    return <MasterDashboard data={dashboardData} />
+  }
 
-  return <MasterDashboard data={dashboardData} />
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center h-96">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-marine-600"></div>
+        </div>
+      }
+    >
+      {renderDashboard()}
+    </Suspense>
+  )
 }

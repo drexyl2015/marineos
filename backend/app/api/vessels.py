@@ -33,7 +33,7 @@ async def list_vessels(skip: int = 0, limit: int = 50, db: Session = Depends(get
 async def create_vessel(vessel: schemas.VesselCreate, db: Session = Depends(get_db), current_user: models.User = Depends(require_manager)):
     if vessel.imo and db.query(models.Vessel).filter(models.Vessel.imo == vessel.imo).first():
         raise HTTPException(status_code=400, detail="IMO number already exists")
-    db_vessel = models.Vessel(**vessel.dict())
+    db_vessel = models.Vessel(**vessel.model_dump())
     db.add(db_vessel)
     db.commit()
     db.refresh(db_vessel)
@@ -63,7 +63,7 @@ async def update_vessel(vessel_id: int, vessel_update: schemas.VesselUpdate, db:
     vessel = db.query(models.Vessel).filter(models.Vessel.id == vessel_id).first()
     if not vessel:
         raise HTTPException(status_code=404, detail="Vessel not found")
-    for field, value in vessel_update.dict(exclude_unset=True).items():
+    for field, value in vessel_update.model_dump(exclude_unset=True).items():
         setattr(vessel, field, value)
     db.commit()
     db.refresh(vessel)

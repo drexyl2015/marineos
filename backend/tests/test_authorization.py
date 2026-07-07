@@ -124,3 +124,46 @@ def test_registration_blocked_when_disabled(client):
         "full_name": "New Person",
     })
     assert res.status_code == 403
+
+
+# --- Assignments and alerts enforce the same boundary -------------------------
+
+def test_assignments_list_requires_auth(client):
+    res = client.get("/api/assignments/")
+    assert res.status_code == 401
+
+
+def test_seafarer_cannot_create_assignment(client, low_priv_headers):
+    res = client.post(
+        "/api/assignments/",
+        json={"crew_id": 1, "vessel_id": 1, "position": "Cook"},
+        headers=low_priv_headers,
+    )
+    assert res.status_code == 403
+
+
+def test_seafarer_cannot_resolve_alert(client, low_priv_headers):
+    res = client.put("/api/alerts/1/resolve", headers=low_priv_headers)
+    assert res.status_code == 403
+
+
+# --- Anonymous AI chat is rate limited ----------------------------------------
+
+def test_anonymous_chat_rate_limited(client, monkeypatch):
+    from app.api import ai_chat
+    from app.ai_service import ai_service
+
+    monkeypatch.setattr(
+        ai_service,
+        "chat_with_tools",
+        lambda *args, **kwargs: {"reply": "ok", "history": [], "tools_used": []},
+    )
+    ai_chat._anon_chat_hits.clear()
+
+    for _ in range(ai_chat.ANON_CHAT_LIMIT):
+        res = client.post("/api/ai/chat/", json={"message": "hello"})
+        assert res.status_code == 200
+
+    res = client.post("/api/ai/chat/", json={"message": "one too many"})
+    assert res.status_code == 429
+    ai_chat._anon_chat_hits.clear()

@@ -3,12 +3,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
-from app.auth_utils import get_current_user
+from app.auth_utils import get_current_user, require_manager
 
 router = APIRouter()
 
 @router.get("/", response_model=dict)
-async def list_assignments(db: Session = Depends(get_db)):
+async def list_assignments(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     assignments = db.query(models.CrewAssignment).filter(
         models.CrewAssignment.status == "active"
     ).all()
@@ -29,14 +29,14 @@ async def list_assignments(db: Session = Depends(get_db)):
     return {"total": len(result), "assignments": result}
 
 @router.post("/", response_model=dict)
-async def create_assignment(assignment: schemas.AssignmentCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+async def create_assignment(assignment: schemas.AssignmentCreate, db: Session = Depends(get_db), current_user: models.User = Depends(require_manager)):
     crew = db.query(models.Crew).filter(models.Crew.id == assignment.crew_id).first()
     if not crew:
         raise HTTPException(status_code=404, detail="Crew not found")
     vessel = db.query(models.Vessel).filter(models.Vessel.id == assignment.vessel_id).first()
     if not vessel:
         raise HTTPException(status_code=404, detail="Vessel not found")
-    db_assignment = models.CrewAssignment(**assignment.dict())
+    db_assignment = models.CrewAssignment(**assignment.model_dump())
     crew.status = "onboard"
     db.add(db_assignment)
     db.commit()
@@ -44,7 +44,7 @@ async def create_assignment(assignment: schemas.AssignmentCreate, db: Session = 
     return {"status": "created", "assignment_id": db_assignment.id}
 
 @router.put("/{assignment_id}", response_model=dict)
-async def update_assignment(assignment_id: int, status: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+async def update_assignment(assignment_id: int, status: str, db: Session = Depends(get_db), current_user: models.User = Depends(require_manager)):
     assignment = db.query(models.CrewAssignment).filter(models.CrewAssignment.id == assignment_id).first()
     if not assignment:
         raise HTTPException(status_code=404, detail="Assignment not found")

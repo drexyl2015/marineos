@@ -36,7 +36,9 @@ function AppInner() {
   // wake, so keep polling until it responds instead of failing permanently.
   useEffect(() => {
     if (apiHealth) return
-    const id = window.setInterval(checkApiHealth, 5000)
+    const id = window.setInterval(() => {
+      if (!document.hidden) checkApiHealth()
+    }, 5000)
     return () => window.clearInterval(id)
   }, [apiHealth])
 

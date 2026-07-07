@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models
-from app.auth_utils import get_current_user
+from app.auth_utils import get_current_user, require_manager
 
 router = APIRouter()
 
@@ -67,7 +67,7 @@ async def get_alert(alert_id: int, db: Session = Depends(get_db), current_user: 
     }
 
 @router.put("/{alert_id}/resolve", response_model=dict)
-async def resolve_alert(alert_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+async def resolve_alert(alert_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(require_manager)):
     """Mark alert as resolved"""
     from datetime import datetime
 

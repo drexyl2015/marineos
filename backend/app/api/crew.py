@@ -84,7 +84,7 @@ async def create_crew(
         if existing:
             raise HTTPException(status_code=400, detail="Employee ID / Contract No. already exists")
 
-    db_crew = models.Crew(**crew.dict())
+    db_crew = models.Crew(**crew.model_dump())
     db.add(db_crew)
     db.commit()
     db.refresh(db_crew)
@@ -107,7 +107,7 @@ async def update_crew(
     if not crew:
         raise HTTPException(status_code=404, detail="Crew not found")
 
-    update_data = crew_update.dict(exclude_unset=True)
+    update_data = crew_update.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(crew, field, value)
 
