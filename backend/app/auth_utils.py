@@ -1,6 +1,6 @@
 """Auth utilities: password hashing, JWT creation and verification"""
 import bcrypt
-from jose import JWTError, jwt
+import jwt
 from datetime import datetime, timedelta, timezone
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -34,7 +34,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         user_id: int = payload.get("sub")
         if user_id is None:
             raise credentials_exc
-    except JWTError:
+    except jwt.InvalidTokenError:
         raise credentials_exc
 
     user = db.query(models.User).filter(models.User.id == int(user_id)).first()
@@ -56,7 +56,7 @@ def get_optional_user(
             return None
         user = db.query(models.User).filter(models.User.id == int(user_id)).first()
         return user if user and user.is_active else None
-    except JWTError:
+    except jwt.InvalidTokenError:
         return None
 
 

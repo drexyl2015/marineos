@@ -1,4 +1,5 @@
 """Agentic AI chat endpoint — tool-use powered maritime assistant"""
+import json
 import time
 from collections import defaultdict, deque
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -38,6 +39,13 @@ def enforce_anon_rate_limit(ip: str) -> None:
             del _anon_chat_hits[key]
 
 
+# Bounds on client-supplied conversation state. History is replayed into the
+# model verbatim, so unbounded input is a direct API-cost amplifier.
+MAX_MESSAGE_CHARS = 4000
+MAX_HISTORY_MESSAGES = 40
+MAX_HISTORY_BYTES = 200_000
+
+
 class ChatRequest(BaseModel):
     message: str
     history: list[Any] = []
@@ -57,8 +65,21 @@ async def chat(
             request.client.host if request.client else "unknown"
         )
         enforce_anon_rate_limit(client_ip)
+    if len(req.message) > MAX_MESSAGE_CHARS:
+        raise HTTPException(status_code=413, detail="Message too long.")
+    if (
+        len(req.history) > MAX_HISTORY_MESSAGES
+        or len(json.dumps(req.history, default=str)) > MAX_HISTORY_BYTES
+    ):
+        raise HTTPException(
+            status_code=413,
+            detail="Conversation history too large. Please start a new chat.",
+        )
     try:
-        result = ai_service.chat_with_tools(req.message, req.history, req.context, db)
+        result = ai_service.chat_with_tools(
+            req.message, req.history, req.context, db,
+            authenticated=current_user is not None,
+        )
         return result
     except Exception as e:
         return {

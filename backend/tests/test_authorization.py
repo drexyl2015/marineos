@@ -167,3 +167,37 @@ def test_anonymous_chat_rate_limited(client, monkeypatch):
     res = client.post("/api/ai/chat/", json={"message": "one too many"})
     assert res.status_code == 429
     ai_chat._anon_chat_hits.clear()
+
+
+def test_chat_rejects_oversized_history(client):
+    from app.api import ai_chat
+    ai_chat._anon_chat_hits.clear()
+    big_history = [{"role": "user", "content": "x"}] * (ai_chat.MAX_HISTORY_MESSAGES + 1)
+    res = client.post("/api/ai/chat/", json={"message": "hi", "history": big_history})
+    assert res.status_code == 413
+    ai_chat._anon_chat_hits.clear()
+
+
+def test_chat_passes_authentication_state(client, auth_headers, monkeypatch):
+    """Anonymous callers must reach the AI service with authenticated=False
+    (restricted toolset); signed-in users with authenticated=True."""
+    from app.api import ai_chat
+    from app.ai_service import ai_service
+
+    captured = {}
+
+    def fake_chat(message, history, context, db, authenticated=True):
+        captured["authenticated"] = authenticated
+        return {"reply": "ok", "history": [], "tools_used": []}
+
+    monkeypatch.setattr(ai_service, "chat_with_tools", fake_chat)
+    ai_chat._anon_chat_hits.clear()
+
+    res = client.post("/api/ai/chat/", json={"message": "hi"})
+    assert res.status_code == 200
+    assert captured["authenticated"] is False
+
+    res = client.post("/api/ai/chat/", json={"message": "hi"}, headers=auth_headers)
+    assert res.status_code == 200
+    assert captured["authenticated"] is True
+    ai_chat._anon_chat_hits.clear()

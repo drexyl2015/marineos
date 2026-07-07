@@ -199,10 +199,23 @@ class MarineAIService:
 
     # ── Agentic Chat with Tool Use ────────────────────────────────────────────
 
-    def chat_with_tools(self, message: str, history: list, context: dict, db: Session) -> Dict:
+    # Tools safe for unauthenticated demo visitors: pure regulation-knowledge
+    # lookups only. Every other tool reads crew PII from the database or
+    # triggers additional paid AI calls, so it requires a signed-in user.
+    PUBLIC_TOOL_NAMES = {
+        "lookup_stcw_requirement",
+        "lookup_mlc_requirement",
+        "get_watchkeeping_requirements",
+    }
+
+    # Hard cap on agentic tool-use rounds per request (cost containment).
+    MAX_TOOL_TURNS = 8
+
+    def chat_with_tools(self, message: str, history: list, context: dict, db: Session, authenticated: bool = True) -> Dict:
         """
         Agentic tool-use chat loop using Claude's tool_use API.
         Executes tool calls against live DB, then lets Claude formulate a response.
+        Unauthenticated callers only get the knowledge-lookup tools.
         Returns: {reply, history, tools_used}
         """
         system = (
@@ -225,16 +238,26 @@ class MarineAIService:
         if context.get("role"):
             system += f"\n\nCurrent user role: {context['role']}"
 
+        if authenticated:
+            tools = self.MARITIME_TOOLS
+        else:
+            tools = [t for t in self.MARITIME_TOOLS if t["name"] in self.PUBLIC_TOOL_NAMES]
+            system += (
+                "\n\nPUBLIC DEMO MODE: the visitor is not signed in. Only regulation "
+                "knowledge tools are available. For crew, fleet, certificate, or "
+                "compliance data, tell them to sign in to MarineOS."
+            )
+
         messages = list(history) + [{"role": "user", "content": message}]
         tools_used: List[str] = []
 
         try:
-          while True:
+          for _ in range(self.MAX_TOOL_TURNS):
             response = self.client.messages.create(
                 model=self.model,
                 max_tokens=400,
                 system=system,
-                tools=self.MARITIME_TOOLS,
+                tools=tools,
                 messages=messages,
             )
 
@@ -258,7 +281,12 @@ class MarineAIService:
                     if not hasattr(block, "type") or block.type != "tool_use":
                         continue
                     tools_used.append(block.name)
-                    result = self._execute_tool(block.name, block.input, db)
+                    # Second line of defence: never execute privileged tools for
+                    # anonymous callers even if the model requests one.
+                    if not authenticated and block.name not in self.PUBLIC_TOOL_NAMES:
+                        result = {"error": "This tool requires signing in to MarineOS."}
+                    else:
+                        result = self._execute_tool(block.name, block.input, db)
                     tool_results.append({
                         "type": "tool_result",
                         "tool_use_id": block.id,
@@ -275,6 +303,13 @@ class MarineAIService:
                     "history": messages,
                     "tools_used": tools_used,
                 }
+
+          # Tool-turn budget exhausted without a final answer.
+          return {
+              "reply": "That request needed too many steps. Please ask something more specific.",
+              "history": messages,
+              "tools_used": tools_used,
+          }
 
         except Exception as exc:
             error_msg = str(exc)
