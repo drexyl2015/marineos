@@ -4,6 +4,8 @@ import {
   CheckCircle, ArrowRight, BarChart2,
   Zap, Search, AlertTriangle, ChevronDown, Menu, X
 } from 'lucide-react'
+import GetAppButton from './GetAppButton'
+
 interface LandingPageProps {
   onEnterDashboard: () => void
   onShowImpressum: () => void
@@ -93,6 +95,7 @@ function MarketingNav({ onEnterDashboard }: {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
+            <GetAppButton variant="nav" />
             <button type="button" onClick={onEnterDashboard} className="btn-primary py-2 px-4 text-sm">
               Sign In
             </button>
@@ -116,6 +119,7 @@ function MarketingNav({ onEnterDashboard }: {
             <a href="#pricing"    onClick={() => setMobileOpen(false)} className="block px-4 py-3 text-steel-300 hover:text-white text-sm">Pricing</a>
             <div className="px-4 pt-3 flex flex-col gap-2">
               <button type="button" onClick={() => { onEnterDashboard(); setMobileOpen(false) }} className="btn-primary text-sm py-2 justify-center">Sign In</button>
+              <GetAppButton variant="nav" />
             </div>
           </div>
         )}
@@ -173,11 +177,12 @@ function HeroSection({ onEnterDashboard }: {
           your entire maritime workforce — powered by Claude AI.
         </p>
 
-        <div className="flex justify-center mb-8 animate-fade-in">
-          <button type="button" onClick={onEnterDashboard} className="btn-primary text-base px-10 py-4">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8 animate-fade-in">
+          <button type="button" onClick={onEnterDashboard} className="btn-primary text-base px-10 py-4 justify-center">
             Sign In
             <ArrowRight className="w-5 h-5" />
           </button>
+          <GetAppButton />
         </div>
 
         <p className="text-steel-400 text-sm animate-fade-in max-w-lg mx-auto leading-relaxed">

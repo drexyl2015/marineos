@@ -1,64 +1,45 @@
 import { useEffect, useState } from 'react'
 import { Download, X, Share } from 'lucide-react'
-
-/** Chrome's install event — not yet in the TS DOM lib. */
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
-}
+import {
+  installAvailable, subscribeInstallAvailable, promptInstall, isStandalone, isIos,
+} from '../lib/installApp'
 
 const DISMISS_KEY = 'install_prompt_dismissed'
 
-function isStandalone(): boolean {
-  return (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    (navigator as any).standalone === true // iOS Safari
-  )
-}
-
-function isIos(): boolean {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent)
-}
-
 /**
- * Floating "Install app" affordance.
- * - Android/desktop Chrome: appears when the browser fires beforeinstallprompt
- *   and triggers the native install dialog.
+ * Floating install nudge (bottom-left).
+ * - Android/desktop Chrome: appears when the browser allows installation and
+ *   triggers the native install dialog.
  * - iOS Safari: shows a one-time hint (Share → Add to Home Screen).
- * - Hidden entirely when already running as an installed app.
+ * - Hidden when already installed or previously dismissed.
  */
 export default function InstallPrompt() {
-  const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null)
+  const [canInstall, setCanInstall] = useState(installAvailable())
   const [showIosHint, setShowIosHint] = useState(false)
+  const [hidden, setHidden] = useState(
+    () => isStandalone() || !!localStorage.getItem(DISMISS_KEY)
+  )
 
   useEffect(() => {
-    if (isStandalone() || localStorage.getItem(DISMISS_KEY)) return
-
-    const onPrompt = (e: Event) => {
-      e.preventDefault()
-      setInstallEvent(e as BeforeInstallPromptEvent)
-    }
-    window.addEventListener('beforeinstallprompt', onPrompt)
-
+    if (hidden) return
+    const unsubscribe = subscribeInstallAvailable(() => setCanInstall(true))
     if (isIos()) setShowIosHint(true)
-
-    return () => window.removeEventListener('beforeinstallprompt', onPrompt)
-  }, [])
+    return unsubscribe
+  }, [hidden])
 
   const dismiss = () => {
     localStorage.setItem(DISMISS_KEY, '1')
-    setInstallEvent(null)
-    setShowIosHint(false)
+    setHidden(true)
   }
 
   const install = async () => {
-    if (!installEvent) return
-    await installEvent.prompt()
-    const choice = await installEvent.userChoice
-    if (choice.outcome === 'accepted') setInstallEvent(null)
+    const result = await promptInstall()
+    if (result !== 'dismissed') setCanInstall(false)
   }
 
-  if (installEvent) {
+  if (hidden) return null
+
+  if (canInstall) {
     return (
       <div className="fixed bottom-5 left-5 z-40 flex items-center gap-1 animate-fade-in">
         <button
